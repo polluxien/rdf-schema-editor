@@ -1,73 +1,102 @@
-# React + TypeScript + Vite
+# RDF Schema Editor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<div align="center">
 
-Currently, two official plugins are available:
+![Status](https://img.shields.io/badge/Status-In%20Progress-blue)
+![University](https://img.shields.io/badge/University-Freie%20Universit%C3%A4t%20Berlin-green)
+![Requirement](https://img.shields.io/badge/Requirement-8%20Expert%20Schema%20Editor-purple)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+</div>
 
-## React Compiler
+> Requirement 8 — Expert Schema Editor User Interface
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+A browser-based tool that enables domain experts (biologists, data curators) to interactively design and export RDF transformation mapping schemas — no coding required. Exported schemas are consumed by the RDF Matching Service (Requirement 5). Based on [Karma](https://github.com/usc-isi-i2/Web-Karma).
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Features
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Load and browse target ontologies (Darwin Core, ABCD, etc.)
+- Import source fields via CSV header upload or manual entry
+- Map fields to ontology properties via drag & drop
+- Define transformation rules (string normalisation, unit conversion, conditional mappings) through guided forms
+- Live RDF triple preview on sample data
+- Export finalised mapping as JSON-LD or Turtle (compatible with RDF Matching Service)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Tech Stack
+
+- **React + TypeScript** (Vite)
+- ...
+
+---
+
+## Project Structure (*At the Moment*)
+```
+rdf-schema-editor/
+├── public/
+├── src/
+│   ├── components/
+│   │   └── Fallback/
+│   │       ├── ErrorBoundary.tsx
+│   │       └── ErrorFallback.tsx
+|   |                              # to be created
+│   ├── App.css
+│   ├── App.tsx
+│   ├── index.css
+│   └── main.tsx
+├── docs/                          
+│   └── user-manual.md             # to be created
+├── Dockerfile                     
+├── docker-compose.yml             
+├── package.json
+├── tsconfig.json
+├── tsconfig.app.json
+├── tsconfig.node.json
+├── vite.config.ts
+└── README.md
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Getting Started
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Local Development
+
+Requires Node.js >= 20
+
+```bash
+git clone https://github.com/polluxien/rdf-schema-editor
+cd rdf-schema-editor
+npm install
+npm run dev
 ```
+
+App runs at `http://localhost:5173`
+
+### Docker
+
+```bash
+docker-compose up --build
+```
+
+App runs at `http://localhost:3000`
+
+---
+
+## Deliverables (*Planned*)
+
+- Source code (this repository)
+- `Dockerfile` + `docker-compose.yml`
+- `docs/user-manual.md`
+- Usability test results & expert feedback (documented in final report)
+- UI design rationale (documented in final report)
+
+---
+
+## Contact
+
+Naouel Karam — karam@infai.org
+Jan Fillies — fillies@infai.org
+
