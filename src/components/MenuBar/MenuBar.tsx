@@ -1,0 +1,249 @@
+import { useState, useRef } from "react";
+import {
+  Upload,
+  Download,
+  FileSpreadsheet,
+  FileCode,
+  ChevronDown,
+} from "lucide-react";
+import { useAppContext } from "../../hooks/useAppContext";
+import type { Ontology, Dataset, OntologyClass } from "../../types";
+import CsvImportDialog, { type CsvImportOptions } from "../CsvImportDialog";
+
+export default function MenuBar() {
+  const { setOntology, setDataset } = useAppContext();
+  const [importOpen, setImportOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
+  const [pendingCsvFile, setPendingCsvFile] = useState<File | null>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const owlInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCsvFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setPendingCsvFile(file);
+    setCsvDialogOpen(true);
+    setImportOpen(false);
+    if (csvInputRef.current) csvInputRef.current.value = "";
+  };
+
+  const handleCsvImportConfirm = (options: CsvImportOptions) => {
+    if (!pendingCsvFile) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split("\n").filter((line) => line.trim());
+      if (lines.length === 0) return;
+
+      const parseLine = (line: string): string[] => {
+        const result: string[] = [];
+        let current = "";
+        let inQuotes = false;
+        const quoteChar = options.quoteChar;
+
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === quoteChar && quoteChar) {
+            inQuotes = !inQuotes;
+          } else if (char === options.delimiter && !inQuotes) {
+            result.push(current.trim());
+            current = "";
+          } else {
+            current += char;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      const startIndex = options.hasHeader ? 1 : 0;
+      const headers = options.hasHeader
+        ? parseLine(lines[0])
+        : parseLine(lines[0]).map((_, i) => `Column ${i + 1}`);
+      const rows = lines.slice(startIndex).map(parseLine);
+
+      const dataset: Dataset = {
+        id: crypto.randomUUID(),
+        name: pendingCsvFile.name,
+        columns: headers.map((header, index) => ({
+          id: crypto.randomUUID(),
+          name: header,
+          sampleValues: rows.slice(0, 5).map((row) => row[index] || ""),
+        })),
+        rows,
+      };
+
+      setDataset(dataset);
+    };
+    reader.readAsText(pendingCsvFile, options.charset);
+    setCsvDialogOpen(false);
+    setPendingCsvFile(null);
+  };
+
+  const handleOwlImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const ontology = parseOwlToOntology(text, file.name);
+      setOntology(ontology);
+    };
+    reader.readAsText(file);
+    setImportOpen(false);
+    if (owlInputRef.current) owlInputRef.current.value = "";
+  };
+
+  const parseOwlToOntology = (owlContent: string, fileName: string): Ontology => {
+    const classes: OntologyClass[] = [];
+    const classRegex = /<owl:Class rdf:about="([^"]+)"[^>]*>[\s\S]*?<\/owl:Class>/g;
+    const labelRegex = /<rdfs:label[^>]*>([^<]+)<\/rdfs:label>/;
+
+    let match;
+    while ((match = classRegex.exec(owlContent)) !== null) {
+      const uri = match[1];
+      const classContent = match[0];
+      const labelMatch = labelRegex.exec(classContent);
+      const label = labelMatch ? labelMatch[1] : uri.split(/[#/]/).pop() || uri;
+
+      classes.push({
+        id: crypto.randomUUID(),
+        uri,
+        label,
+        properties: [],
+      });
+    }
+
+    if (classes.length === 0) {
+      classes.push({
+        id: crypto.randomUUID(),
+        uri: "http://example.org/SampleClass",
+        label: "Sample Class (no classes found in OWL)",
+        properties: [],
+      });
+    }
+
+    return {
+      id: crypto.randomUUID(),
+      name: fileName.replace(/\.(owl|rdf|xml)$/i, ""),
+      uri: `http://example.org/${fileName}`,
+      classes,
+    };
+  };
+
+  const handleExportTtl = () => {
+    const ttlContent = generateTurtleExport();
+    const blob = new Blob([ttlContent], { type: "text/turtle" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mapping.ttl";
+    a.click();
+    URL.revokeObjectURL(url);
+    setExportOpen(false);
+  };
+
+  const generateTurtleExport = (): string => {
+    return `@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+# RDF Schema Mapping Export
+# Generated by RDF Schema Editor
+# TODO: Implement actual mapping export logic
+`;
+  };
+
+  return (
+    <header className="flex items-center gap-1 px-4 py-2 bg-gray-900 text-white border-b border-gray-700">
+      <div className="font-semibold text-lg mr-6">RDF Schema Editor</div>
+
+      <div className="relative">
+        <button
+          onClick={() => {
+            setImportOpen(!importOpen);
+            setExportOpen(false);
+          }}
+          className="flex items-center gap-1 px-3 py-1.5 rounded hover:bg-gray-700 transition-colors"
+        >
+          <Upload size={16} />
+          Import
+          <ChevronDown size={14} />
+        </button>
+
+        {importOpen && (
+          <div className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-600 rounded shadow-lg min-w-[180px] z-50">
+            <button
+              onClick={() => csvInputRef.current?.click()}
+              className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-700 transition-colors text-left"
+            >
+              <FileSpreadsheet size={16} />
+              CSV Dataset
+            </button>
+            <button
+              onClick={() => owlInputRef.current?.click()}
+              className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-700 transition-colors text-left"
+            >
+              <FileCode size={16} />
+              Ontology (OWL)
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="relative">
+        <button
+          onClick={() => {
+            setExportOpen(!exportOpen);
+            setImportOpen(false);
+          }}
+          className="flex items-center gap-1 px-3 py-1.5 rounded hover:bg-gray-700 transition-colors"
+        >
+          <Download size={16} />
+          Export
+          <ChevronDown size={14} />
+        </button>
+
+        {exportOpen && (
+          <div className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-600 rounded shadow-lg min-w-[180px] z-50">
+            <button
+              onClick={handleExportTtl}
+              className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-700 transition-colors text-left"
+            >
+              <FileCode size={16} />
+              RDF (*.ttl)
+            </button>
+          </div>
+        )}
+      </div>
+
+      <input
+        ref={csvInputRef}
+        type="file"
+        accept=".csv"
+        onChange={handleCsvFileSelect}
+        className="hidden"
+      />
+      <input
+        ref={owlInputRef}
+        type="file"
+        accept=".owl,.rdf,.xml"
+        onChange={handleOwlImport}
+        className="hidden"
+      />
+
+      <CsvImportDialog
+        isOpen={csvDialogOpen}
+        file={pendingCsvFile}
+        onClose={() => {
+          setCsvDialogOpen(false);
+          setPendingCsvFile(null);
+        }}
+        onConfirm={handleCsvImportConfirm}
+      />
+    </header>
+  );
+}

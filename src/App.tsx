@@ -1,15 +1,11 @@
-//import ErrorBoundary from "./components/Fallback/ErrorBoundary";
-//import ErrorFallback from "./components/Fallback/ErrorFallback";
-import "./App.css";
+import { AppProvider } from "./context/AppContext";
+import Layout from "./components/Layout";
 
 function App() {
   return (
-    <>
-      {/*<ErrorBoundary FallbackComponent={ErrorFallback!}>*/}
-      <h1>Willkommen zum RDF Schema Editor</h1>
-      <p>Hier können Sie Ihre RDF Schemata bearbeiten und verwalten.</p>
-      {/*</ErrorBoundary>*/}
-    </>
+    <AppProvider>
+      <Layout />
+    </AppProvider>
   );
 }
 
