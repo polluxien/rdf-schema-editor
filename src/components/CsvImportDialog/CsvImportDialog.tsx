@@ -1,12 +1,8 @@
 import { useState } from "react";
 import { X, FileSpreadsheet } from "lucide-react";
+import type { CsvImportOptions } from "../../types/csvImport";
 
-export interface CsvImportOptions {
-  delimiter: string;
-  charset: string;
-  hasHeader: boolean;
-  quoteChar: string;
-}
+export type { CsvImportOptions };
 
 interface CsvImportDialogProps {
   isOpen: boolean;

@@ -7,8 +7,10 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useAppContext } from "../../hooks/useAppContext";
-import type { Ontology, Dataset, OntologyClass } from "../../types";
-import CsvImportDialog, { type CsvImportOptions } from "../CsvImportDialog";
+import type { CsvImportOptions } from "../../types/csvImport";
+import { parseCsvTextToDataset } from "../../lib/csvParse";
+import { parseOwlToOntology } from "../../lib/owlParse";
+import CsvImportDialog from "../CsvImportDialog";
 
 export default function MenuBar() {
   const { setOntology, setDataset } = useAppContext();
@@ -29,55 +31,17 @@ export default function MenuBar() {
   };
 
   const handleCsvImportConfirm = (options: CsvImportOptions) => {
-    if (!pendingCsvFile) return;
+    const file = pendingCsvFile;
+    if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
-      const lines = text.split("\n").filter((line) => line.trim());
-      if (lines.length === 0) return;
-
-      const parseLine = (line: string): string[] => {
-        const result: string[] = [];
-        let current = "";
-        let inQuotes = false;
-        const quoteChar = options.quoteChar;
-
-        for (let i = 0; i < line.length; i++) {
-          const char = line[i];
-          if (char === quoteChar && quoteChar) {
-            inQuotes = !inQuotes;
-          } else if (char === options.delimiter && !inQuotes) {
-            result.push(current.trim());
-            current = "";
-          } else {
-            current += char;
-          }
-        }
-        result.push(current.trim());
-        return result;
-      };
-
-      const startIndex = options.hasHeader ? 1 : 0;
-      const headers = options.hasHeader
-        ? parseLine(lines[0])
-        : parseLine(lines[0]).map((_, i) => `Column ${i + 1}`);
-      const rows = lines.slice(startIndex).map(parseLine);
-
-      const dataset: Dataset = {
-        id: crypto.randomUUID(),
-        name: pendingCsvFile.name,
-        columns: headers.map((header, index) => ({
-          id: crypto.randomUUID(),
-          name: header,
-          sampleValues: rows.slice(0, 5).map((row) => row[index] || ""),
-        })),
-        rows,
-      };
-
+      const dataset = parseCsvTextToDataset(text, file.name, options);
+      if (!dataset) return;
       setDataset(dataset);
     };
-    reader.readAsText(pendingCsvFile, options.charset);
+    reader.readAsText(file, options.charset);
     setCsvDialogOpen(false);
     setPendingCsvFile(null);
   };
@@ -89,49 +53,11 @@ export default function MenuBar() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
-      const ontology = parseOwlToOntology(text, file.name);
-      setOntology(ontology);
+      setOntology(parseOwlToOntology(text, file.name));
     };
     reader.readAsText(file);
     setImportOpen(false);
     if (owlInputRef.current) owlInputRef.current.value = "";
-  };
-
-  const parseOwlToOntology = (owlContent: string, fileName: string): Ontology => {
-    const classes: OntologyClass[] = [];
-    const classRegex = /<owl:Class rdf:about="([^"]+)"[^>]*>[\s\S]*?<\/owl:Class>/g;
-    const labelRegex = /<rdfs:label[^>]*>([^<]+)<\/rdfs:label>/;
-
-    let match;
-    while ((match = classRegex.exec(owlContent)) !== null) {
-      const uri = match[1];
-      const classContent = match[0];
-      const labelMatch = labelRegex.exec(classContent);
-      const label = labelMatch ? labelMatch[1] : uri.split(/[#/]/).pop() || uri;
-
-      classes.push({
-        id: crypto.randomUUID(),
-        uri,
-        label,
-        properties: [],
-      });
-    }
-
-    if (classes.length === 0) {
-      classes.push({
-        id: crypto.randomUUID(),
-        uri: "http://example.org/SampleClass",
-        label: "Sample Class (no classes found in OWL)",
-        properties: [],
-      });
-    }
-
-    return {
-      id: crypto.randomUUID(),
-      name: fileName.replace(/\.(owl|rdf|xml)$/i, ""),
-      uri: `http://example.org/${fileName}`,
-      classes,
-    };
   };
 
   const handleExportTtl = () => {
