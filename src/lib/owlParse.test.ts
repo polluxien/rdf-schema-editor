@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseOwlToOntology } from "../helper/owlParse";
+import { parseOwlToOntology } from "./owlParse";
 
 function seqIds(prefix = "id") {
   let n = 0;
