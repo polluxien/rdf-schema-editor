@@ -2,10 +2,10 @@ import { createContext } from "react";
 import type { Ontology, Dataset, Mapping } from "../types";
 
 export interface AppContextType {
-  ontology: Ontology | null;
-  setOntology: (ontology: Ontology | null) => void;
+  ontology: Ontology;
+  setOntology: (ontology: Ontology) => void;
   dataset: Dataset | null;
-  setDataset: (dataset: Dataset | null) => void;
+  setDataset: (dataset: Dataset) => void;
   mappings: Mapping[];
   addMapping: (mapping: Mapping) => void;
   removeMapping: (mappingId: string) => void;

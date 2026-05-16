@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -7,7 +7,6 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
-  type Node,
   type Edge,
   type OnConnect,
   type NodeTypes,
@@ -17,6 +16,7 @@ import "@xyflow/react/dist/style.css";
 import { useAppContext } from "../../hooks/useAppContext";
 import OntologyClassNode from "./OntologyClassNode";
 import DatasetColumnNode from "./DatasetColumnNode";
+import OntologyAddObjectDialog from "./AddDialog/OntologyAddObjectDialog";
 
 const nodeTypes: NodeTypes = {
   ontologyClass: OntologyClassNode,
@@ -24,8 +24,15 @@ const nodeTypes: NodeTypes = {
 };
 
 export default function OntologyCanvas() {
+  //Controlling visability of the "Add Object" dialog ‚
+  const [ontologyAddObjectDialog, setOntologyAddObjectDialog] = useState(false);
+
   const { ontology, dataset, addMapping } = useAppContext();
 
+  // ? Man könnte später vlt einstellen ob man die Nodes automatisch anlegen will oder klassich manuell
+  // ? muss aber so oder so überarbeitet werden
+
+  /*
   const initialNodes = useMemo(() => {
     const nodes: Node[] = [];
 
@@ -36,6 +43,7 @@ export default function OntologyCanvas() {
           type: "ontologyClass",
           position: { x: 400, y: 80 + index * 120 },
           data: { label: cls.label, uri: cls.uri, classData: cls },
+          is,
         });
       });
     }
@@ -46,20 +54,34 @@ export default function OntologyCanvas() {
           id: `column-${col.id}`,
           type: "datasetColumn",
           position: { x: 50, y: 80 + index * 80 },
-          data: { label: col.name, sampleValues: col.sampleValues, columnData: col },
+          data: {
+            label: col.name,
+            sampleValues: col.sampleValues,
+            columnData: col,
+          },
         });
       });
     }
 
     return nodes;
   }, [ontology, dataset]);
+  */
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  const addNodesToCanvas = (newNode: Node) => {
+    setNodes((nds) => [...nds, newNode]);
+  };
 
   const onConnect: OnConnect = useCallback(
     (params) => {
-      setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: "#a855f7" } }, eds));
+      setEdges((eds) =>
+        addEdge(
+          { ...params, animated: true, style: { stroke: "#a855f7" } },
+          eds,
+        ),
+      );
 
       const sourceId = params.source?.replace("column-", "") || "";
       const targetId = params.target?.replace("class-", "") || "";
@@ -72,12 +94,14 @@ export default function OntologyCanvas() {
         });
       }
     },
-    [setEdges, addMapping]
+    [setEdges, addMapping],
   );
 
+  /*
   useMemo(() => {
     setNodes(initialNodes);
   }, [initialNodes, setNodes]);
+  */
 
   const hasContent = ontology || dataset;
 
@@ -95,14 +119,16 @@ export default function OntologyCanvas() {
       >
         <Background color="#374151" gap={20} />
         <Controls className="bg-gray-800 border-gray-600 text-white [&>button]:bg-gray-800 [&>button]:border-gray-600 [&>button]:text-white [&>button:hover]:bg-gray-700" />
-        <MiniMap
-          nodeColor={(node) => {
-            if (node.type === "ontologyClass") return "#a855f7";
-            if (node.type === "datasetColumn") return "#3b82f6";
-            return "#6b7280";
-          }}
-          className="bg-gray-800 border-gray-600"
-        />
+        {hasContent && (
+          <MiniMap
+            nodeColor={(node) => {
+              if (node.type === "ontologyClass") return "#a855f7";
+              if (node.type === "datasetColumn") return "#3b82f6";
+              return "#6b7280";
+            }}
+            className="bg-gray-800 border-gray-600"
+          />
+        )}
 
         {!hasContent && (
           <Panel position="top-center" className="mt-20">
@@ -114,6 +140,18 @@ export default function OntologyCanvas() {
                 and <strong>Import → CSV Dataset</strong> to load your data
               </p>
             </div>
+          </Panel>
+        )}
+
+        {/* Placeholder for future "Add Object" button or other controls when content is present */}
+        {!ontologyAddObjectDialog && (
+          <Panel position="top-right" className="m-4">
+            <button
+              onClick={() => setOntologyAddObjectDialog(true)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded hover:bg-gray-700 transition-colors bg-gray-800 border border-gray-600 text-white"
+            >
+              Add Object
+            </button>
           </Panel>
         )}
 
@@ -136,6 +174,15 @@ export default function OntologyCanvas() {
           </Panel>
         )}
       </ReactFlow>
+      {/* DialogComponent for adding new objects to the ontology or dataset, can be triggered from a button in the UI */}
+      {ontologyAddObjectDialog && (
+        <div className="absolute top-4 right-4">
+          <OntologyAddObjectDialog
+            addNodesToCanvas={addNodesToCanvas}
+            closeDialog={() => setOntologyAddObjectDialog(false)}
+          />
+        </div>
+      )}
     </div>
   );
 }
