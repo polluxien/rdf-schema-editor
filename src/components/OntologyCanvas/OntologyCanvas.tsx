@@ -4,12 +4,12 @@ import {
   Background,
   Controls,
   MiniMap,
-  useNodesState,
-  useEdgesState,
   addEdge,
-  type Edge,
-  type OnConnect,
+  applyEdgeChanges,
+  applyNodeChanges,
+  type Node,
   type NodeTypes,
+  type OnConnect,
   Panel,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -24,59 +24,39 @@ const nodeTypes: NodeTypes = {
 };
 
 export default function OntologyCanvas() {
-  //Controlling visability of the "Add Object" dialog ‚
   const [ontologyAddObjectDialog, setOntologyAddObjectDialog] = useState(false);
 
-  const { ontology, dataset, addMapping } = useAppContext();
+  const {
+    ontology,
+    dataset,
+    addMapping,
+    flowNodes,
+    flowEdges,
+    setFlowNodes,
+    setFlowEdges,
+  } = useAppContext();
 
-  // ? Man könnte später vlt einstellen ob man die Nodes automatisch anlegen will oder klassich manuell
-  // ? muss aber so oder so überarbeitet werden
+  const onNodesChange = useCallback(
+    (changes: Parameters<typeof applyNodeChanges>[0]) => {
+      setFlowNodes((nds) => applyNodeChanges(changes, nds));
+    },
+    [setFlowNodes],
+  );
 
-  /*
-  const initialNodes = useMemo(() => {
-    const nodes: Node[] = [];
-
-    if (ontology) {
-      ontology.classes.forEach((cls, index) => {
-        nodes.push({
-          id: `class-${cls.id}`,
-          type: "ontologyClass",
-          position: { x: 400, y: 80 + index * 120 },
-          data: { label: cls.label, uri: cls.uri, classData: cls },
-          is,
-        });
-      });
-    }
-
-    if (dataset) {
-      dataset.columns.forEach((col, index) => {
-        nodes.push({
-          id: `column-${col.id}`,
-          type: "datasetColumn",
-          position: { x: 50, y: 80 + index * 80 },
-          data: {
-            label: col.name,
-            sampleValues: col.sampleValues,
-            columnData: col,
-          },
-        });
-      });
-    }
-
-    return nodes;
-  }, [ontology, dataset]);
-  */
-
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const onEdgesChange = useCallback(
+    (changes: Parameters<typeof applyEdgeChanges>[0]) => {
+      setFlowEdges((eds) => applyEdgeChanges(changes, eds));
+    },
+    [setFlowEdges],
+  );
 
   const addNodesToCanvas = (newNode: Node) => {
-    setNodes((nds) => [...nds, newNode]);
+    setFlowNodes((nds) => [...nds, newNode]);
   };
 
   const onConnect: OnConnect = useCallback(
     (params) => {
-      setEdges((eds) =>
+      setFlowEdges((eds) =>
         addEdge(
           { ...params, animated: true, style: { stroke: "#a855f7" } },
           eds,
@@ -94,22 +74,16 @@ export default function OntologyCanvas() {
         });
       }
     },
-    [setEdges, addMapping],
+    [setFlowEdges, addMapping],
   );
-
-  /*
-  useMemo(() => {
-    setNodes(initialNodes);
-  }, [initialNodes, setNodes]);
-  */
 
   const hasContent = ontology || dataset;
 
   return (
     <div className="flex-1 bg-gray-950 relative">
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
+        nodes={flowNodes}
+        edges={flowEdges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -143,7 +117,6 @@ export default function OntologyCanvas() {
           </Panel>
         )}
 
-        {/* Placeholder for future "Add Object" button or other controls when content is present */}
         {!ontologyAddObjectDialog && (
           <Panel position="top-right" className="m-4">
             <button
@@ -174,7 +147,6 @@ export default function OntologyCanvas() {
           </Panel>
         )}
       </ReactFlow>
-      {/* DialogComponent for adding new objects to the ontology or dataset, can be triggered from a button in the UI */}
       {ontologyAddObjectDialog && (
         <div className="absolute top-4 right-4">
           <OntologyAddObjectDialog

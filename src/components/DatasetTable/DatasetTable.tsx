@@ -4,7 +4,7 @@ import { useAppContext } from "../../hooks/useAppContext";
 
 export default function DatasetTable() {
   const { dataset } = useAppContext();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [visibleRows, setVisibleRows] = useState(5);
 
   if (!dataset) {
