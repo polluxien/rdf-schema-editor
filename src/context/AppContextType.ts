@@ -16,6 +16,8 @@ export interface AppContextType {
   flowEdges: Edge[];
   setFlowNodes: Dispatch<SetStateAction<Node[]>>;
   setFlowEdges: Dispatch<SetStateAction<Edge[]>>;
+  focusedColumnId: string | null;
+  setFocusedColumnId: (columnId: string | null) => void;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);

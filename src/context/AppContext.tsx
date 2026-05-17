@@ -1,4 +1,4 @@
-import { useCallback, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import type { Edge, Node } from "@xyflow/react";
 import type { Dataset, Mapping, Ontology } from "../types";
 import { useWorkspace } from "../hooks/useWorkspace";
@@ -11,6 +11,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const data = activeWorkspaceId
     ? getWorkspaceData(activeWorkspaceId)
     : null;
+
+  const [focusedColumnId, setFocusedColumnId] = useState<string | null>(null);
 
   const patch = useCallback(
     (
@@ -96,6 +98,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         flowEdges: data?.flowEdges ?? [],
         setFlowNodes,
         setFlowEdges,
+        focusedColumnId,
+        setFocusedColumnId,
       }}
     >
       {children}

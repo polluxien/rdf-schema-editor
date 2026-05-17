@@ -1,11 +1,43 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronUp, ChevronDown, Table } from "lucide-react";
 import { useAppContext } from "../../hooks/useAppContext";
 
 export default function DatasetTable() {
-  const { dataset } = useAppContext();
+  const { dataset, focusedColumnId, setFocusedColumnId } = useAppContext();
+  const columnRefs = useRef<Record<string, HTMLTableCellElement | null>>({});
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [visibleRows, setVisibleRows] = useState(5);
+  const [highlightedColumnId, setHighlightedColumnId] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!focusedColumnId || !dataset) return;
+    setIsExpanded(true);
+  }, [focusedColumnId, dataset]);
+
+  useEffect(() => {
+    if (!focusedColumnId || !isExpanded) return;
+
+    const columnId = focusedColumnId;
+    const frame = requestAnimationFrame(() => {
+      columnRefs.current[columnId]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+      setHighlightedColumnId(columnId);
+      setFocusedColumnId(null);
+    });
+
+    const timer = setTimeout(() => setHighlightedColumnId(null), 2000);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
+  }, [focusedColumnId, isExpanded, setFocusedColumnId]);
 
   if (!dataset) {
     return (
@@ -18,7 +50,9 @@ export default function DatasetTable() {
         </div>
         <div className="p-8 text-center text-gray-500">
           <p>No dataset loaded</p>
-          <p className="text-sm mt-1">Import a CSV file to view your data here</p>
+          <p className="text-sm mt-1">
+            Import a CSV file to view your data here
+          </p>
         </div>
       </div>
     );
@@ -53,7 +87,23 @@ export default function DatasetTable() {
                 {dataset.columns.map((column) => (
                   <th
                     key={column.id}
-                    className="px-4 py-2 font-medium border-l border-gray-700"
+                    ref={(el) => {
+                      columnRefs.current[column.id] = el;
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (highlightedColumnId === column.id && isExpanded) {
+                        setFocusedColumnId(null);
+                        setHighlightedColumnId(null);
+                      } else {
+                        setFocusedColumnId(column.id);
+                      }
+                    }}
+                    className={`px-4 py-2 font-medium border-l border-gray-700 transition-colors cursor-pointer hover:bg-gray-700/50 ${
+                      highlightedColumnId === column.id
+                        ? "bg-blue-900/60 text-blue-100"
+                        : ""
+                    }`}
                   >
                     {column.name}
                   </th>
@@ -70,7 +120,11 @@ export default function DatasetTable() {
                   {row.map((cell, cellIndex) => (
                     <td
                       key={cellIndex}
-                      className="px-4 py-2 border-l border-gray-800 truncate max-w-[200px]"
+                      className={`px-4 py-2 border-l border-gray-800 truncate max-w-[200px] transition-colors ${
+                        highlightedColumnId === dataset.columns[cellIndex]?.id
+                          ? "bg-blue-900/30"
+                          : ""
+                      }`}
                       title={cell}
                     >
                       {cell}
@@ -84,7 +138,11 @@ export default function DatasetTable() {
           {dataset.rows.length > visibleRows && (
             <div className="flex justify-center gap-2 p-2 bg-gray-800 border-t border-gray-700">
               <button
-                onClick={() => setVisibleRows((prev) => Math.min(prev + 10, dataset.rows.length))}
+                onClick={() =>
+                  setVisibleRows((prev) =>
+                    Math.min(prev + 10, dataset.rows.length),
+                  )
+                }
                 className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded text-gray-300 transition-colors"
               >
                 Show more

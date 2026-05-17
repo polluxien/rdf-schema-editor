@@ -14,9 +14,10 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useAppContext } from "../../hooks/useAppContext";
-import OntologyClassNode from "./OntologyClassNode";
-import DatasetColumnNode from "./DatasetColumnNode";
-import OntologyAddObjectDialog from "./AddDialog/OntologyAddObjectDialog";
+import OntologyClassNode from "./Nodes/OntologyClassNode";
+import OntologyAddObjectDialog from "./AddObjectDialog/OntologyAddObjectDialog";
+import DatasetColumnNode from "./Nodes/DatasetColumnNode";
+import NodeContextMenu from "./Nodes/NodeContextMenu";
 
 const nodeTypes: NodeTypes = {
   ontologyClass: OntologyClassNode,
@@ -24,7 +25,15 @@ const nodeTypes: NodeTypes = {
 };
 
 export default function OntologyCanvas() {
+  const { setFocusedColumnId } = useAppContext();
+
   const [ontologyAddObjectDialog, setOntologyAddObjectDialog] = useState(false);
+  //State context menu for colume Header nodes
+  const [menu, setMenu] = useState<{
+    x: number;
+    y: number;
+    nodeId: string;
+  } | null>(null);
 
   const {
     ontology,
@@ -36,6 +45,7 @@ export default function OntologyCanvas() {
     setFlowEdges,
   } = useAppContext();
 
+  //* Handlers for react flow changes (nodes, edges, connections)
   const onNodesChange = useCallback(
     (changes: Parameters<typeof applyNodeChanges>[0]) => {
       setFlowNodes((nds) => applyNodeChanges(changes, nds));
@@ -43,16 +53,37 @@ export default function OntologyCanvas() {
     [setFlowNodes],
   );
 
+  const addNodesToCanvas = (newNode: Node) => {
+    setFlowNodes((nds) => [...nds, newNode]);
+  };
+
+  /*
+  const getNodeById = (id: string) => {
+    return flowNodes.find((node) => node.id === id);
+  };
+  */
+
+  const deleteNode = (id: string) => {
+    setFlowNodes((nds) => nds.filter((node) => node.id !== id));
+    setFlowEdges((eds) =>
+      eds.filter((edge) => edge.source !== id && edge.target !== id),
+    );
+    setMenu(null);
+  };
+
+  const jumpToColumnInDataset = (nodeId: string) => {
+    const columnId = nodeId.replace("column-", "");
+    setFocusedColumnId(columnId);
+    setMenu(null);
+  };
+
+  // * Handlers for react flow relationships (edges)
   const onEdgesChange = useCallback(
     (changes: Parameters<typeof applyEdgeChanges>[0]) => {
       setFlowEdges((eds) => applyEdgeChanges(changes, eds));
     },
     [setFlowEdges],
   );
-
-  const addNodesToCanvas = (newNode: Node) => {
-    setFlowNodes((nds) => [...nds, newNode]);
-  };
 
   const onConnect: OnConnect = useCallback(
     (params) => {
@@ -90,6 +121,17 @@ export default function OntologyCanvas() {
         nodeTypes={nodeTypes}
         fitView
         className="bg-gray-950"
+        //Context menu handling: open custom menu on right-click, close on any click or move
+        onNodeContextMenu={(event, node) => {
+          // ? only show context menu for dataset column nodes (at the moment, could be extended to ontology class nodes as well)
+          if (!node.id.startsWith("column-")) return;
+          event.preventDefault();
+          setMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
+        }}
+        onPaneClick={() => setMenu(null)}
+        onNodeClick={() => setMenu(null)}
+        onMove={() => setMenu(null)}
+        onClick={() => setMenu(null)}
       >
         <Background color="#374151" gap={20} />
         <Controls className="bg-gray-800 border-gray-600 text-white [&>button]:bg-gray-800 [&>button]:border-gray-600 [&>button]:text-white [&>button:hover]:bg-gray-700" />
@@ -155,6 +197,18 @@ export default function OntologyCanvas() {
           />
         </div>
       )}
+      {
+        //saftey safty check to only show context menu when all necessary data is available
+        menu?.nodeId && menu?.x !== undefined && menu?.y !== undefined && (
+          <div>
+            <NodeContextMenu
+              menuProps={menu}
+              deleteNode={deleteNode}
+              jumpToColumnInDataset={jumpToColumnInDataset}
+            />
+          </div>
+        )
+      }
     </div>
   );
 }

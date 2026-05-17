@@ -8,7 +8,7 @@ interface DatasetColumnNodeData {
 
 function DatasetColumnNode({ data }: NodeProps) {
   const nodeData = data as unknown as DatasetColumnNodeData;
-  
+
   return (
     <div className="bg-blue-900 border-2 border-blue-500 rounded-lg px-4 py-3 min-w-[150px] shadow-lg">
       <Handle
