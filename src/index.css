@@ -66,6 +66,11 @@ body {
   margin: 0;
 }
 
+/* Edge labels (e.g. "Bearbeiten") must sit above nodes in the stacking order */
+.react-flow__edgelabel-renderer {
+  z-index: 10;
+}
+
 h1,
 h2 {
   font-family: var(--heading);

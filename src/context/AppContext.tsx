@@ -1,18 +1,22 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Edge, Node } from "@xyflow/react";
 import type { Dataset, Mapping, Ontology } from "../types";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { AppContext } from "./AppContextType";
+import { loadMockData } from "../lib/useMock";
+
+const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === "true";
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { activeWorkspaceId, getWorkspaceData, updateWorkspaceData } =
     useWorkspace();
 
-  const data = activeWorkspaceId
-    ? getWorkspaceData(activeWorkspaceId)
-    : null;
+  const data = activeWorkspaceId ? getWorkspaceData(activeWorkspaceId) : null;
 
   const [focusedColumnId, setFocusedColumnId] = useState<string | null>(null);
+
+  // Ref, um sicherzustellen, dass die Mock-Daten nur einmal geladen werden
+  const mockLoadedRef = useRef(false);
 
   const patch = useCallback(
     (
@@ -38,6 +42,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (dataset: Dataset | null) => patch(() => ({ dataset })),
     [patch],
   );
+
+  useEffect(() => {
+    if (USE_MOCK_DATA && !mockLoadedRef.current) {
+      mockLoadedRef.current = true;
+
+      const initMockData = () => {
+        try {
+          const { dataset, ontology } = loadMockData();
+
+          if (dataset) {
+            setDataset(dataset);
+          }
+          if (ontology) {
+            setOntology(ontology);
+          }
+        } catch (error) {
+          console.error("Error while loading mock data:", error);
+        }
+      };
+
+      initMockData();
+    }
+  }, [setDataset, setOntology]);
 
   const addMapping = useCallback(
     (mapping: Mapping) =>

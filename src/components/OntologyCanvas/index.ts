@@ -1,1 +1,1 @@
-export { default } from "./OntologyCanvas";
+export { default } from "./Relation/OntologyCanvas";
