@@ -6,7 +6,6 @@ const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === "true";
 const REAL_FETCH = import.meta.env.VITE_REAL_FETCH === "true";
 
 // Utility function to handle fetch with error handling
-const FRONTEND_BASE_URL = import.meta.env.VITE_FRONTEND_BASE_URL;
 const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
 
 // Function to post login data and get login information

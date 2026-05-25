@@ -1,24 +1,15 @@
 import { useState } from "react";
-import {
-  AlertTriangle,
-  RefreshCw,
-  Copy,
-  Check,
-  ChevronRight,
-  ChevronDown,
-} from "lucide-react";
+import { RefreshCw, ChevronRight, ChevronDown } from "lucide-react";
 
-function ErrorFallback({ error }: { error: Error }) {
+interface ErrorFallbackProps {
+  error: unknown;
+  resetErrorBoundary?: () => void;
+}
+
+function ErrorFallback({ error }: ErrorFallbackProps) {
   const [showStack, setShowStack] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(
-      `${error.name}: ${error.message}\n\n${error.stack ?? ""}`,
-    );
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const appError =
+    error instanceof Error ? error : new Error(String(error ?? "Unknown error"));
 
   return (
     <div className="flex justify-center p-8">
@@ -32,7 +23,7 @@ function ErrorFallback({ error }: { error: Error }) {
             Fehlertyp
           </p>
           <p className="text-sm font-mono text-gray-900 dark:text-gray-100">
-            {error.name}
+            {appError.name}
           </p>
         </div>
 
@@ -41,11 +32,11 @@ function ErrorFallback({ error }: { error: Error }) {
             Meldung
           </p>
           <p className="text-sm font-mono text-gray-900 dark:text-gray-100">
-            {error.message}
+            {appError.message}
           </p>
         </div>
 
-        {error.stack && (
+        {appError.stack && (
           <>
             <button
               type="button"
@@ -62,7 +53,7 @@ function ErrorFallback({ error }: { error: Error }) {
             {showStack && (
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4">
                 <pre className="text-xs font-mono text-gray-500 dark:text-gray-400 whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
-                  {error.stack}
+                  {appError.stack}
                 </pre>
               </div>
             )}

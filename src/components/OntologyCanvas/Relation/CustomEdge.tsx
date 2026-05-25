@@ -46,7 +46,7 @@ function CustomEdge({
               event.stopPropagation();
               onEdit?.(id);
             }}
-            className="group relative px-2 py-2 rotate-45 bg-gray-800 border border-gray-600 text-gray-200 hover:bg-gray-700 cursor-pointer shadow-md transition-colors duration-200"
+            className="group relative px-2 py-2 rotate-45 bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 cursor-pointer shadow-md transition-colors duration-200 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
             title="Edit Relationship"
           >
             {/*

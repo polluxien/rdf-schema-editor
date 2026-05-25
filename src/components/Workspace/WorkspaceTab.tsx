@@ -24,6 +24,7 @@ export default function WorkspaceTab({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!isEditing) setDraft(workspace.name);
   }, [workspace.name, isEditing]);
 
@@ -44,10 +45,10 @@ export default function WorkspaceTab({
 
   return (
     <div
-      className={`group relative flex items-center max-w-[160px] border-r border-gray-800 ${
+      className={`group relative flex items-center max-w-[160px] border-r border-gray-200 dark:border-gray-800 ${
         isActive
-          ? "bg-gray-950 text-gray-100"
-          : "bg-gray-900/50 text-gray-500 hover:bg-gray-900 hover:text-gray-300"
+          ? "bg-white text-gray-950 dark:bg-gray-950 dark:text-gray-100"
+          : "bg-gray-100/70 text-gray-500 hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-900/50 dark:hover:bg-gray-900 dark:hover:text-gray-300"
       }`}
     >
       {isEditing ? (
@@ -64,7 +65,7 @@ export default function WorkspaceTab({
             }
           }}
           aria-label="Workspace-Name"
-          className="w-full bg-gray-950 px-3 py-1.5 text-xs outline-none border-b border-gray-400"
+          className="w-full bg-white px-3 py-1.5 text-xs outline-none border-b border-gray-400 dark:bg-gray-950"
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
@@ -77,7 +78,7 @@ export default function WorkspaceTab({
           }}
           className={`flex-1 truncate py-1.5 text-xs text-left ${
             canDelete ? "pl-3 pr-5" : "px-3"
-          } ${isActive ? "border-b border-gray-100 -mb-px" : ""}`}
+          } ${isActive ? "border-b border-gray-900 -mb-px dark:border-gray-100" : ""}`}
           title="Doppelklick zum Umbenennen"
         >
           {workspace.name}
@@ -91,7 +92,7 @@ export default function WorkspaceTab({
             e.stopPropagation();
             onDelete();
           }}
-          className="absolute right-0 top-0 bottom-0 px-1 opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-opacity"
+          className="absolute right-0 top-0 bottom-0 px-1 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-500 transition-opacity dark:text-gray-600 dark:hover:text-red-400"
           title="Workspace schließen"
         >
           <X size={12} />

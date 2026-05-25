@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import type { LoginResource } from "./types/login";
 import { getLogin } from "./backend/api";
 import { LoginContext } from "./backend/LoginInfo";
+import LoadingComponent from "./components/UI-NoPurpose/LoadingComp";
 
 function AppController() {
   const [loginInfo, setLoginInfo] = useState<LoginResource | false | undefined>(
@@ -29,7 +30,12 @@ function AppController() {
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           <WorkspaceProvider>
             <AppProvider>
-              <div className="flex flex-col h-screen text-white">
+              <div className="flex flex-col h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+                {loginInfo === undefined && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-gray-950/80">
+                    <LoadingComponent label="Checking session..." />
+                  </div>
+                )}
                 <WorkspaceBar />
                 <OntologyCanvas />
                 <DatasetTable />

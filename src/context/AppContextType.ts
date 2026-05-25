@@ -4,7 +4,7 @@ import type { Dataset, Mapping, Ontology } from "../types";
 
 export interface AppContextType {
   activeWorkspaceId: string | null;
-  colorMode: ColorMode | null;
+  colorMode: ColorMode;
   setColorMode: (colorMode: ColorMode) => void;
   ontology: Ontology | null;
   setOntology: (ontology: Ontology | null) => void;

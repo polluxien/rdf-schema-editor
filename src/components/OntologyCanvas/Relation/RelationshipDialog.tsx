@@ -20,19 +20,19 @@ function RelationshipDialog({
   );
 
   return (
-    <div className="bg-gray-800 border border-gray-600 rounded-lg p-4 shadow-lg w-80">
-      <div className="w-full mb-4 flex items-center justify-between border-b border-gray-700 pb-3">
-        <span className="text-sm font-medium text-gray-200">Relationship</span>
+    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-lg w-80 dark:bg-gray-800 dark:border-gray-600">
+      <div className="w-full mb-4 flex items-center justify-between border-b border-gray-200 pb-3 dark:border-gray-700">
+        <span className="text-sm font-medium text-gray-900 dark:text-gray-200">Relationship</span>
         <button
           type="button"
-          className="text-gray-400 hover:text-red-400 transition-colors"
+          className="text-gray-500 hover:text-red-500 transition-colors dark:text-gray-400 dark:hover:text-red-400"
           onClick={closeDialog}
           aria-label="Close"
         >
           &times;
         </button>
       </div>
-      <div className="space-y-3 text-sm text-gray-300">
+      <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
         <div>
           <span className="text-gray-500 block text-xs mb-1">
             Dataset column
@@ -47,12 +47,12 @@ function RelationshipDialog({
             {ontologyClass?.label ?? classId}
           </span>
         </div>
-        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
           {ontologyClass ? (
             <>
               {/* --- NORMALANSICHT --- */}
               <div className="mb-6">
-                <h3 className="font-semibold text-gray-800 mb-2">
+                <h3 className="font-semibold text-gray-800 mb-2 dark:text-gray-100">
                   Details für: {ontologyClass.label}
                 </h3>
 
@@ -69,13 +69,13 @@ function RelationshipDialog({
                       >
                         <div className="w-2 h-2 mt-1.5 rounded-full bg-purple-500 flex-shrink-0"></div>
                         <div>
-                          <div className="text-sm font-medium text-gray-800">
+                          <div className="text-sm font-medium text-gray-800 dark:text-gray-100">
                             {property.label || "Kein Label"}
                           </div>
                           <div className="text-xs text-purple-600 break-all">
                             {property.uri}
                           </div>
-                          <div className="text-xs text-gray-400 mt-1">
+                          <div className="text-xs text-gray-500 mt-1 dark:text-gray-400">
                             Domain:{" "}
                             {property.domainUri
                               ? property.domainUri.split("#").pop()
@@ -108,7 +108,7 @@ function RelationshipDialog({
                         className="flex items-start gap-2 mb-1 pl-2 border-l-2 border-green-500"
                       >
                         <div className="w-2 h-2 mt-1.5 rounded-full bg-green-500 flex-shrink-0"></div>
-                        <span className="text-xs text-gray-600 break-all">
+                        <span className="text-xs text-gray-600 break-all dark:text-gray-400">
                           {subClassUri}
                         </span>
                       </div>

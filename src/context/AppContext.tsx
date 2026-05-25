@@ -12,13 +12,27 @@ import { AppContext } from "./AppContextType";
 import { loadMockData } from "../lib/useMock";
 
 const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === "true";
+const COLOR_MODE_STORAGE_KEY = "colorMode";
+const COLOR_MODES: ColorMode[] = ["light", "dark", "system"];
+
+const getInitialColorMode = (): ColorMode => {
+  if (typeof window === "undefined") return "system";
+  const storedMode = localStorage.getItem(COLOR_MODE_STORAGE_KEY) as ColorMode;
+  return COLOR_MODES.includes(storedMode) ? storedMode : "system";
+};
+
+const resolveColorMode = (mode: ColorMode): "light" | "dark" => {
+  if (mode !== "system") return mode;
+  if (typeof window === "undefined") return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+};
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { activeWorkspaceId, getWorkspaceData, updateWorkspaceData } =
     useWorkspace();
-  const [colorMode, setLocalColorMode] = useState<ColorMode | null>(
-    (localStorage.getItem("colorMode") as ColorMode) ?? "dark",
-  );
+  const [colorMode, setLocalColorMode] = useState<ColorMode>(getInitialColorMode);
 
   const data = activeWorkspaceId ? getWorkspaceData(activeWorkspaceId) : null;
 
@@ -75,6 +89,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [setDataset, setOntology]);
 
+  useEffect(() => {
+    const applyTheme = () => {
+      const resolvedMode = resolveColorMode(colorMode);
+      document.documentElement.dataset.theme = colorMode;
+      document.documentElement.dataset.resolvedTheme = resolvedMode;
+      document.documentElement.classList.toggle("dark", resolvedMode === "dark");
+      document.documentElement.style.colorScheme = resolvedMode;
+    };
+
+    applyTheme();
+
+    if (colorMode !== "system") return;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    media.addEventListener("change", applyTheme);
+    return () => media.removeEventListener("change", applyTheme);
+  }, [colorMode]);
+
   const addMapping = useCallback(
     (mapping: Mapping) =>
       patch((prev) => ({ mappings: [...prev.mappings, mapping] })),
@@ -119,8 +150,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const setColorMode = useCallback((mode: ColorMode) => {
-    setLocalColorMode(mode); // <--- Hier den umbenannten Setter aufrufen!
-    localStorage.setItem("colorMode", mode);
+    setLocalColorMode(mode);
+    localStorage.setItem(COLOR_MODE_STORAGE_KEY, mode);
   }, []);
 
   return (
@@ -141,7 +172,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setFlowEdges,
         focusedColumnId,
         setFocusedColumnId,
-        colorMode: colorMode ?? null,
+        colorMode,
         setColorMode,
       }}
     >

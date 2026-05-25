@@ -2,8 +2,8 @@ import { Plus } from "lucide-react";
 import { useWorkspace } from "../../hooks/useWorkspace";
 import WorkspaceTab from "./WorkspaceTab";
 import WorkspaceImportExport from "./WorkspaceImportExport";
-import ColorModeToggle from "./ColorModeToggle";
 import ProfileAvaterButComp from "../Profile/ProfileAvaterButComp";
+import ColorModeToggle from "../UI-NoPurpose/ColorModeToggle";
 
 export default function WorkspaceBar() {
   const {
@@ -32,14 +32,14 @@ export default function WorkspaceBar() {
   };
 
   return (
-    <header className="shrink-0 bg-gray-900 text-gray-300 select-none">
-      <div className="px-3 py-1 text-[10px] uppercase tracking-widest text-gray-600 border-b border-gray-800 flex items-center justify-between">
-        <span className="font-bold text-gray-400">rdf-schema-editor</span>
+    <header className="shrink-0 bg-gray-100 text-gray-700 select-none dark:bg-gray-900 dark:text-gray-300">
+      <div className="px-3 py-1 text-[10px] uppercase tracking-widest text-gray-500 border-b border-gray-200 flex items-center justify-between dark:text-gray-600 dark:border-gray-800">
+        <span className="font-bold text-gray-600 dark:text-gray-400">rdf-schema-editor</span>
         <ColorModeToggle />
         <ProfileAvaterButComp />
       </div>
 
-      <div className="flex items-stretch border-b border-gray-800 overflow-x-auto">
+      <div className="flex items-stretch border-b border-gray-200 overflow-x-auto dark:border-gray-800">
         {workspaces.map((workspace) => (
           <WorkspaceTab
             key={workspace.id}
@@ -54,7 +54,7 @@ export default function WorkspaceBar() {
         <button
           type="button"
           onClick={handleAdd}
-          className="flex items-center px-2.5 text-gray-600 hover:text-gray-300 hover:bg-gray-900 transition-colors"
+          className="flex items-center px-2.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 transition-colors dark:text-gray-600 dark:hover:text-gray-300 dark:hover:bg-gray-900"
           title="Neuer Workspace"
         >
           <Plus size={14} strokeWidth={1.5} />

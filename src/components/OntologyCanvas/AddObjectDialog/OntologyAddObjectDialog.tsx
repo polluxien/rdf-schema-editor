@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import type { Node as FlowNode } from "@xyflow/react";
 import { SegmentedToggle } from "./ToggleComponent";
 import { useAppContext } from "../../../hooks/useAppContext";
 import type { DatasetColumn, OntologyClass } from "../../../types";
 
 interface OntologyAddObjectDialogProps {
-  addNodesToCanvas: (newNode: Node) => void;
+  addNodesToCanvas: (newNode: FlowNode) => void;
   closeDialog: () => void;
 }
 
@@ -14,7 +15,7 @@ function OntologyAddObjectDialog({
 }: OntologyAddObjectDialogProps) {
   const { ontology, dataset } = useAppContext();
 
-  const [viewMode, setViewMode] = useState<"object" | "ontology">("object");
+  const [viewMode, setViewMode] = useState<"column" | "ontology">("column");
 
   // * Sequence of labels
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,13 +43,13 @@ function OntologyAddObjectDialog({
   }, [sortMenuOpen]);
 
   // * Add objects tocanvas
-  const handleAddObject = (type: "object" | "ontology", obj: unknown) => {
-    let newNode: Node;
+  const handleAddObject = (type: "column" | "ontology", obj: unknown) => {
+    let newNode: FlowNode;
 
     // TODO: Dynamische Positionierung implementieren
     const basePosition = { x: 50, y: 80 };
 
-    if (type === "object") {
+    if (type === "column") {
       const column = obj as DatasetColumn;
       newNode = {
         id: `column-${column.id}`,
@@ -77,11 +78,11 @@ function OntologyAddObjectDialog({
 
   // * Helper functions
   const getLabelListBySequence = (
-    type: "object" | "ontology",
+    type: "column" | "ontology",
   ): (DatasetColumn | OntologyClass)[] => {
     // get list
     let items: (DatasetColumn | OntologyClass)[] = [];
-    if (type === "object" && dataset?.columns) {
+    if (type === "column" && dataset?.columns) {
       items = [...dataset.columns] as DatasetColumn[];
     } else if (ontology?.classes) {
       items = [...ontology.classes] as OntologyClass[];
@@ -91,7 +92,7 @@ function OntologyAddObjectDialog({
     if (searchTerm !== "" && items.length > 0) {
       items = items.filter((item) => {
         const label =
-          viewMode === "object"
+          viewMode === "column"
             ? (item as DatasetColumn).name
             : (item as OntologyClass).label;
         return label.toLowerCase().includes(searchTerm.toLowerCase());
@@ -101,11 +102,11 @@ function OntologyAddObjectDialog({
     // sort by name or position
     items.sort((a, b) => {
       const labelA =
-        viewMode === "object"
+        viewMode === "column"
           ? (a as DatasetColumn).name
           : (a as OntologyClass).label;
       const labelB =
-        viewMode === "object"
+        viewMode === "column"
           ? (b as DatasetColumn).name
           : (b as OntologyClass).label;
 
@@ -133,18 +134,18 @@ function OntologyAddObjectDialog({
   };
 
   const hasData =
-    viewMode === "object"
+    viewMode === "column"
       ? dataset?.columns && dataset.columns.length > 0
       : ontology?.classes && ontology.classes.length > 0;
   const currentList = getLabelListBySequence(viewMode);
 
   return (
-    <div className="bg-gray-800 border border-gray-600 rounded-lg p-4 shadow-lg w-80">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-lg w-80 dark:bg-gray-800 dark:border-gray-600">
       {/* close button */}
-      <div className="w-full mb-4 flex items-center justify-between border-b border-gray-700 pb-3">
-        <span className="text-sm font-medium text-gray-200">Add Object</span>
+      <div className="w-full mb-4 flex items-center justify-between border-b border-gray-200 pb-3 dark:border-gray-700">
+        <span className="text-sm font-medium text-gray-900 dark:text-gray-200">Add Object</span>
         <button
-          className="text-gray-400 hover:text-red-400 transition-colors"
+          className="text-gray-500 hover:text-red-500 transition-colors dark:text-gray-400 dark:hover:text-red-400"
           onClick={closeDialog}
         >
           <svg
@@ -177,8 +178,9 @@ function OntologyAddObjectDialog({
             type="text"
             placeholder="Search..."
             aria-label="Search objects"
-            className="w-full bg-gray-700 text-gray-200 placeholder:text-gray-500 border border-gray-600 rounded-md 
-                   py-1.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 
+            className="w-full bg-white text-gray-900 placeholder:text-gray-400 border border-gray-300 rounded-md 
+                   py-1.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+                   dark:bg-gray-700 dark:text-gray-200 dark:placeholder:text-gray-500 dark:border-gray-600
                    transition-colors"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -186,8 +188,9 @@ function OntologyAddObjectDialog({
         </div>
 
         <button
-          className="flex-shrink-0 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white 
-                 p-1.5 rounded-md border border-gray-600 transition-colors group"
+          className="flex-shrink-0 bg-white hover:bg-gray-100 text-gray-600 hover:text-gray-900
+                 p-1.5 rounded-md border border-gray-300 transition-colors group
+                 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 dark:hover:text-white dark:border-gray-600"
           title="Sort labels"
           aria-label="Sort labels"
           onClick={() => setSortMenuOpen(!sortMenuOpen)}
@@ -210,7 +213,7 @@ function OntologyAddObjectDialog({
         {sortMenuOpen && (
           <div
             ref={sortMenuRef}
-            className="absolute right-0 mt-2 w-48 bg-gray-700 border border-gray-600 rounded-md shadow-lg z-20"
+            className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-20 dark:bg-gray-700 dark:border-gray-600"
           >
             {[
               { id: "BY_POSITION_START", label: "Sort by Position (Start)" },
@@ -233,7 +236,7 @@ function OntologyAddObjectDialog({
                 className={`block w-full text-left px-4 py-2 text-sm transition-colors ${
                   sortType === option.id
                     ? "bg-blue-600 text-white"
-                    : "text-gray-300 hover:bg-gray-600 hover:text-white"
+                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-950 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white"
                 }`}
               >
                 {option.label}
@@ -244,10 +247,10 @@ function OntologyAddObjectDialog({
       </div>
 
       {/* Show list of objects and ontology classes */}
-      <div className="mt-4 max-h-60 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-600">
+      <div className="mt-4 max-h-60 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600">
         {!hasData ? (
           <div className="text-gray-500 text-sm text-center mt-4">
-            {viewMode === "object"
+            {viewMode === "column"
               ? "No objects available. Please import a dataset."
               : "No ontology classes available. Please import an ontology."}
           </div>
@@ -258,13 +261,13 @@ function OntologyAddObjectDialog({
         ) : (
           currentList.map((item) => {
             const label =
-              viewMode === "object"
+              viewMode === "column"
                 ? (item as DatasetColumn).name
                 : (item as OntologyClass).label;
             return (
               <button
                 key={createID(label)}
-                className={` w-full text-left text-gray-300 text-sm p-2 ${viewMode === "object" ? "hover:bg-blue-500" : "hover:bg-purple-700"} rounded cursor-pointer transition-colors`}
+                className={`w-full text-left text-gray-700 text-sm p-2 ${viewMode === "column" ? "hover:bg-blue-100 dark:hover:bg-blue-500" : "hover:bg-purple-100 dark:hover:bg-purple-700"} rounded cursor-pointer transition-colors dark:text-gray-300`}
                 onClick={() => handleAddObject(viewMode, item)}
               >
                 {label}
