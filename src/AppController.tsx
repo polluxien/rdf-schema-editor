@@ -10,6 +10,7 @@ import type { LoginResource } from "./types/login";
 import { getLogin } from "./backend/api";
 import { LoginContext } from "./backend/LoginInfo";
 import LoadingComponent from "./components/UI-NoPurpose/LoadingComp";
+import { FileImportProvider } from "./components/FileImport/FileImportContext";
 
 function AppController() {
   const [loginInfo, setLoginInfo] = useState<LoginResource | false | undefined>(
@@ -17,11 +18,26 @@ function AppController() {
   );
 
   useEffect(() => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 3000);
+
     const f = async () => {
-      const actLogin = await getLogin();
-      setLoginInfo(actLogin);
+      try {
+        const actLogin = await getLogin(controller.signal);
+        setLoginInfo(actLogin);
+      } catch (error) {
+        console.warn("Could not check login session:", error);
+        setLoginInfo(false);
+      } finally {
+        window.clearTimeout(timeout);
+      }
     };
     f();
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
   }, []);
 
   return (
@@ -30,16 +46,18 @@ function AppController() {
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           <WorkspaceProvider>
             <AppProvider>
-              <div className="flex flex-col h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-                {loginInfo === undefined && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-gray-950/80">
-                    <LoadingComponent label="Checking session..." />
-                  </div>
-                )}
-                <WorkspaceBar />
-                <OntologyCanvas />
-                <DatasetTable />
-              </div>
+              <FileImportProvider>
+                <div className="flex flex-col h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+                  {loginInfo === undefined && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-gray-950/80">
+                      <LoadingComponent label="Checking session..." />
+                    </div>
+                  )}
+                  <WorkspaceBar />
+                  <OntologyCanvas />
+                  <DatasetTable />
+                </div>
+              </FileImportProvider>
             </AppProvider>
           </WorkspaceProvider>
         </ErrorBoundary>

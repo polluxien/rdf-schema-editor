@@ -39,7 +39,7 @@ function ColorModeToggle() {
       {UI_COLOR_SELECT == 0 ? (
         <button
           type="button"
-          title={`Switch to ${toggleMode} mode`}
+          title={`Switch to ${toggleMode()} mode`}
           onClick={() => setColorMode(toggleMode())}
           className={`
         w-3.5 h-3.5 rounded-full border transition-all duration-200 

@@ -13,6 +13,7 @@ export interface AppContextType {
   mappings: Mapping[];
   addMapping: (mapping: Mapping) => void;
   removeMapping: (mappingId: string) => void;
+  removeMappingsForNode: (nodeId: string) => void;
   clearMappings: () => void;
   flowNodes: Node[];
   flowEdges: Edge[];

@@ -25,6 +25,7 @@ import NodeContextMenu from "./Nodes/NodeContextMenu";
 import CustomEdge from "./Relation/CustomEdge";
 import { EdgeEditProvider } from "./Relation/EdgeEditContext";
 import RelationshipDialog from "./Relation/RelationshipDialog";
+import DragAndDropZone from "../CsvImportDialog/DragAndDropZone";
 
 const nodeTypes: NodeTypes = {
   ontologyClass: OntologyClassNode,
@@ -55,6 +56,7 @@ export default function OntologyCanvas() {
     ontology,
     dataset,
     addMapping,
+    removeMappingsForNode,
     flowNodes,
     flowEdges,
     setFlowNodes,
@@ -85,6 +87,7 @@ export default function OntologyCanvas() {
     setFlowEdges((eds) =>
       eds.filter((edge) => edge.source !== id && edge.target !== id),
     );
+    removeMappingsForNode(id);
     setMenu(null);
   };
 
@@ -150,10 +153,36 @@ export default function OntologyCanvas() {
   // -----------------------------------------------------------------------------
   const [showBigMap, setShowBigMap] = useState(false);
 
+  // ? Drag and drop params and handlers
+  // -----------------------------------------------------------------------------
+  const [dragCounter, setDragCounter] = useState(0);
+  const isDraggingOver = dragCounter > 0;
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragCounter((c) => c + 1);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragCounter((c) => c - 1);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragCounter(0);
+  }, []);
+
   const hasContent = ontology || dataset;
 
   return (
-    <div className="flex-1 relative bg-gray-50 dark:bg-gray-950">
+    <div
+      className="flex-1 relative bg-gray-50 dark:bg-gray-950"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      onDragOver={(e) => e.preventDefault()}
+    >
       <EdgeEditProvider onEdit={handleEdgeClick}>
         <ReactFlow
           nodes={flowNodes}
@@ -164,7 +193,7 @@ export default function OntologyCanvas() {
           defaultEdgeOptions={{
             type: "custom",
             animated: true,
-            style: { stroke: "#a855f7" },
+            style: { stroke: "#FFA500" },
           }}
           onEdgeClick={(_, edge) => handleEdgeClick(edge.id)}
           onConnect={onConnect}
@@ -190,74 +219,73 @@ export default function OntologyCanvas() {
         >
           <Background gap={20} />
 
-
-          <Controls
-            showZoom={true}
-            showFitView={true}
-            showInteractive={false}
-            style={{ bottom: 17, left: 0 }}
-          >
-            
-            <ControlButton
-              onClick={() => setShowBigMap((prev) => !prev)}
-              title={showBigMap ? "Hide MiniMap" : "Show MiniMap"}
+          {hasContent && !isDraggingOver && (
+            <Controls
+              showZoom={true}
+              showFitView={true}
+              showInteractive={false}
+              style={{ bottom: 17, left: 0 }}
             >
-              {showBigMap ? (
-                <svg
-                  viewBox="0 0 15 15"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect
-                    x="1"
-                    y="1"
-                    width="13"
-                    height="13"
-                    rx="1"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                  />
-                  <rect
-                    x="3"
-                    y="3"
-                    width="5"
-                    height="4"
-                    rx="0.5"
-                    fill="currentColor"
-                    opacity="0.5"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  viewBox="0 0 15 15"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect
-                    x="2"
-                    y="2"
-                    width="11"
-                    height="11"
-                    rx="1"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                  />
-                  <rect
-                    x="4"
-                    y="4"
-                    width="7"
-                    height="5"
-                    rx="0.5"
-                    fill="currentColor"
-                    opacity="0.5"
-                  />
+              <ControlButton
+                onClick={() => setShowBigMap((prev) => !prev)}
+                title={showBigMap ? "Hide MiniMap" : "Show MiniMap"}
+              >
+                {showBigMap ? (
+                  <svg
+                    viewBox="0 0 15 15"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect
+                      x="1"
+                      y="1"
+                      width="13"
+                      height="13"
+                      rx="1"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                    />
+                    <rect
+                      x="3"
+                      y="3"
+                      width="5"
+                      height="4"
+                      rx="0.5"
+                      fill="currentColor"
+                      opacity="0.5"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    viewBox="0 0 15 15"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect
+                      x="2"
+                      y="2"
+                      width="11"
+                      height="11"
+                      rx="1"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                    />
+                    <rect
+                      x="4"
+                      y="4"
+                      width="7"
+                      height="5"
+                      rx="0.5"
+                      fill="currentColor"
+                      opacity="0.5"
+                    />
+                  </svg>
+                )}
+              </ControlButton>
+            </Controls>
+          )}
 
-                </svg>
-              )}
-            </ControlButton>
-          </Controls>
-
-          {showBigMap && (
+          {showBigMap && !isDraggingOver && (
             <MiniMap
               position="bottom-left"
               style={{ marginLeft: "55px" }}
@@ -269,23 +297,7 @@ export default function OntologyCanvas() {
             />
           )}
 
-          {!hasContent && (
-            <Panel position="top-center" className="mt-20">
-              <div className="text-center text-gray-600 bg-white/85 backdrop-blur-sm p-8 rounded-lg border border-gray-200 shadow-sm dark:text-gray-400 dark:bg-gray-800/80 dark:border-gray-700">
-                <p className="text-lg mb-2 text-gray-900 dark:text-gray-200">
-                  No ontology or dataset loaded
-                </p>
-                <p className="text-sm">
-                  Use <strong>Import → Ontology (OWL)</strong> to load an
-                  ontology
-                  <br />
-                  and <strong>Import → CSV Dataset</strong> to load your data
-                </p>
-              </div>
-            </Panel>
-          )}
-
-          {!showOntologyAddObjectDialog && (
+          {!showOntologyAddObjectDialog && hasContent && !isDraggingOver && (
             <Panel position="top-right" className="m-4">
               <div className="relative group">
                 <button
@@ -313,6 +325,10 @@ export default function OntologyCanvas() {
                 </div>
               </div>
             </Panel>
+          )}
+
+          {(!hasContent || isDraggingOver) && (
+            <DragAndDropZone showDragAndDropZone={!hasContent || isDraggingOver} />
           )}
 
           {hasContent && (

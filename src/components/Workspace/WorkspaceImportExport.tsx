@@ -1,59 +1,16 @@
-import { useRef, useState } from "react";
-import { useAppContext } from "../../hooks/useAppContext";
-import type { CsvImportOptions } from "../../types/csvImport";
-import { parseCsvTextToDataset } from "../../lib/csvParse";
-import { parseOwlToOntology } from "../../lib/owlParse";
-import CsvImportDialog from "../CsvImportDialog";
-import LoadingComponent from "../UI-NoPurpose/LoadingComp";
+import { useRef } from "react";
+import { useFileImport } from "../FileImport/FileImportContext";
 
 export default function WorkspaceImportExport() {
-  const { setOntology, setDataset } = useAppContext();
-  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
-  const [pendingCsvFile, setPendingCsvFile] = useState<File | null>(null);
-  const [importingLabel, setImportingLabel] = useState<string | null>(null);
+  const { importFiles } = useFileImport();
   const csvInputRef = useRef<HTMLInputElement>(null);
   const owlInputRef = useRef<HTMLInputElement>(null);
 
-  const handleCsvFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    setPendingCsvFile(file);
-    setCsvDialogOpen(true);
-    if (csvInputRef.current) csvInputRef.current.value = "";
-  };
-
-  const handleCsvImportConfirm = (options: CsvImportOptions) => {
-    const file = pendingCsvFile;
-    if (!file) return;
-
-    setImportingLabel("Importing CSV...");
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const dataset = parseCsvTextToDataset(text, file.name, options);
-      if (dataset) setDataset(dataset);
-      setImportingLabel(null);
-    };
-    reader.onerror = () => setImportingLabel(null);
-    reader.readAsText(file, options.charset);
-    setCsvDialogOpen(false);
-    setPendingCsvFile(null);
-  };
-
-  const handleOwlImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setImportingLabel("Importing ontology...");
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      setOntology(parseOwlToOntology(text, file.name));
-      setImportingLabel(null);
-    };
-    reader.onerror = () => setImportingLabel(null);
-    reader.readAsText(file);
-    if (owlInputRef.current) owlInputRef.current.value = "";
+    importFiles([file]);
+    event.target.value = "";
   };
 
   const handleExportTtl = () => {
@@ -104,7 +61,7 @@ export default function WorkspaceImportExport() {
         type="file"
         accept=".csv"
         aria-label="CSV importieren"
-        onChange={handleCsvFileSelect}
+        onChange={handleFileSelect}
         className="hidden"
       />
       <input
@@ -112,24 +69,9 @@ export default function WorkspaceImportExport() {
         type="file"
         accept=".owl,.rdf,.xml"
         aria-label="OWL importieren"
-        onChange={handleOwlImport}
+        onChange={handleFileSelect}
         className="hidden"
       />
-
-      <CsvImportDialog
-        isOpen={csvDialogOpen}
-        file={pendingCsvFile}
-        onClose={() => {
-          setCsvDialogOpen(false);
-          setPendingCsvFile(null);
-        }}
-        onConfirm={handleCsvImportConfirm}
-      />
-      {importingLabel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-gray-950/80">
-          <LoadingComponent label={importingLabel} />
-        </div>
-      )}
     </div>
   );
 }

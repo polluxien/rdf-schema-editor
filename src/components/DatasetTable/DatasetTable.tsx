@@ -40,22 +40,7 @@ export default function DatasetTable() {
   }, [focusedColumnId, isExpanded, setFocusedColumnId]);
 
   if (!dataset) {
-    return (
-      <div className="bg-white border-t border-gray-200 dark:bg-gray-900 dark:border-gray-700">
-        <div className="flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-800">
-          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-            <Table size={16} />
-            <span className="font-medium">Dataset</span>
-          </div>
-        </div>
-        <div className="p-8 text-center text-gray-500 dark:text-gray-500">
-          <p>No dataset loaded</p>
-          <p className="text-sm mt-1">
-            Import a CSV file to view your data here
-          </p>
-        </div>
-      </div>
-    );
+    return <></>;
   }
 
   const displayRows = dataset.rows.slice(0, visibleRows);
@@ -116,7 +101,9 @@ export default function DatasetTable() {
                   key={rowIndex}
                   className="border-t border-gray-100 hover:bg-gray-100/80 dark:border-gray-800 dark:hover:bg-gray-800/50"
                 >
-                  <td className="px-4 py-2 text-gray-500 dark:text-gray-600">{rowIndex + 1}</td>
+                  <td className="px-4 py-2 text-gray-500 dark:text-gray-600">
+                    {rowIndex + 1}
+                  </td>
                   {row.map((cell, cellIndex) => (
                     <td
                       key={cellIndex}

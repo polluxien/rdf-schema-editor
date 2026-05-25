@@ -6,6 +6,8 @@ import {
 } from "@xyflow/react";
 import { useEdgeEdit } from "./EdgeEditContext";
 
+const magicNumberStrokeWidth = 4;
+
 function CustomEdge({
   id,
   sourceX,
@@ -30,7 +32,12 @@ function CustomEdge({
 
   return (
     <>
-      <BaseEdge id={id} path={edgePath} style={style} interactionWidth={20} />
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        style={{ ...style, strokeWidth: magicNumberStrokeWidth }}
+        interactionWidth={20}
+      />
       <EdgeLabelRenderer>
         <div
           className={`edge-label nodrag nopan ${selected ? "selected" : ""}`}
@@ -46,15 +53,10 @@ function CustomEdge({
               event.stopPropagation();
               onEdit?.(id);
             }}
-            className="group relative px-2 py-2 rotate-45 bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 cursor-pointer shadow-md transition-colors duration-200 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+            // Angepasste Klassen für Orange-Töne je nach Modus
+            className="group relative px-2 py-2 rotate-45 bg-orange-200 text-orange-900 border border-orange-400 hover:bg-orange-300 dark:bg-orange-200 dark:text-orange-300 dark:border-orange-600 dark:hover:bg-orange-700 cursor-pointer shadow-md transition-colors duration-200"
             title="Edit Relationship"
-          >
-            {/*
-            <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap z-50">
-              Edit Relationship
-            </span>
-            */}
-          </button>
+          ></button>
         </div>
       </EdgeLabelRenderer>
     </>

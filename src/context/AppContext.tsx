@@ -57,12 +57,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const setOntology = useCallback(
-    (ontology: Ontology | null) => patch(() => ({ ontology })),
+    (ontology: Ontology | null) =>
+      patch((prev) => {
+        const removedClassNodeIds = new Set(
+          prev.flowNodes
+            .filter((node) => node.id.startsWith("class-"))
+            .map((node) => node.id),
+        );
+
+        return {
+          ontology,
+          mappings: [],
+          flowNodes: prev.flowNodes.filter((node) => !removedClassNodeIds.has(node.id)),
+          flowEdges: prev.flowEdges.filter(
+            (edge) =>
+              !removedClassNodeIds.has(edge.source) &&
+              !removedClassNodeIds.has(edge.target),
+          ),
+        };
+      }),
     [patch],
   );
 
   const setDataset = useCallback(
-    (dataset: Dataset | null) => patch(() => ({ dataset })),
+    (dataset: Dataset | null) =>
+      patch((prev) => {
+        const removedColumnNodeIds = new Set(
+          prev.flowNodes
+            .filter((node) => node.id.startsWith("column-"))
+            .map((node) => node.id),
+        );
+
+        return {
+          dataset,
+          mappings: [],
+          flowNodes: prev.flowNodes.filter(
+            (node) => !removedColumnNodeIds.has(node.id),
+          ),
+          flowEdges: prev.flowEdges.filter(
+            (edge) =>
+              !removedColumnNodeIds.has(edge.source) &&
+              !removedColumnNodeIds.has(edge.target),
+          ),
+        };
+      }),
     [patch],
   );
 
@@ -120,6 +158,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [patch],
   );
 
+  const removeMappingsForNode = useCallback(
+    (nodeId: string) =>
+      patch((prev) => {
+        const columnId = nodeId.startsWith("column-")
+          ? nodeId.replace("column-", "")
+          : null;
+        const classId = nodeId.startsWith("class-")
+          ? nodeId.replace("class-", "")
+          : null;
+
+        return {
+          mappings: prev.mappings.filter(
+            (mapping) =>
+              mapping.sourceColumnId !== columnId &&
+              mapping.targetClassId !== classId,
+          ),
+        };
+      }),
+    [patch],
+  );
+
   const clearMappings = useCallback(
     () => patch(() => ({ mappings: [] })),
     [patch],
@@ -165,6 +224,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         mappings: data?.mappings ?? [],
         addMapping,
         removeMapping,
+        removeMappingsForNode,
         clearMappings,
         flowNodes: data?.flowNodes ?? [],
         flowEdges: data?.flowEdges ?? [],

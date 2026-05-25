@@ -47,7 +47,7 @@ export async function postLogin(
 }
 
 // Function to get login information, returns false if not logged in
-export async function getLogin(): Promise<LoginResource | false> {
+export async function getLogin(signal?: AbortSignal): Promise<LoginResource | false> {
   const url = `${API_BASE_URL}/api/login`;
 
   // ! Mock
@@ -60,6 +60,7 @@ export async function getLogin(): Promise<LoginResource | false> {
   const response = await fetchWithErrorHandling(url, {
     method: "GET",
     credentials: "include" as RequestCredentials,
+    signal,
   });
   if (response.ok) {
     const loginInfo: LoginResource | false = await response.json();
