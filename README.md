@@ -27,35 +27,42 @@ A browser-based tool that enables domain experts (biologists, data curators) to 
 
 ## Tech Stack
 
-- **React + TypeScript** (Vite)
-- ...
+- **Framework**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **State Management**: React Context API (`AppContext`, `WorkspaceContext`, `LoginContext`)
+- **Visualization**: React Flow (Canvas, Nodes, Edges)
+- **Styling**: Tailwind CSS + CSS Modules
+- **Testing**: ViTes/Jest + MockData (booting via Dev-Mode -> `.env-Variable`)
 
 ---
 
-## Project Structure (*At the Moment*)
+## Project Structure (*25.05.26*)
 ```
-rdf-schema-editor/
-├── public/
 ├── src/
+│   ├── AppController.tsx          # Main app controller
+│   ├── backend/                   # API & authentication
+│   │   ├── api.ts                 
+│   │   ├── fetchWithErrorHandling.tsx
+│   │   └── LoginInfo.tsx
 │   ├── components/
-│   │   └── Fallback/
-│   │       ├── ErrorBoundary.tsx
-│   │       └── ErrorFallback.tsx
-|   |                              # to be created
-│   ├── App.css
-│   ├── App.tsx
-│   ├── index.css
-│   └── main.tsx
-├── docs/                          
-│   └── user-manual.md             # to be created
-├── Dockerfile                     
-├── docker-compose.yml             
-├── package.json
-├── tsconfig.json
-├── tsconfig.app.json
-├── tsconfig.node.json
-├── vite.config.ts
-└── README.md
+│   │   ├── CsvImportDialog/       # CSV import with drag & drop
+│   │   ├── DatasetTable/          # Dataset table view
+│   │   ├── OntologyCanvas/        # Visual ontology editor
+│   │   │   ├── Nodes/             # Class & column nodes
+│   │   │   ├── Relation/          # Edges & relationship
+│   │   │   └── AddObjectDialog/   # Add objects to interactiv canvas
+│   │   ├── Workspace/             # Workspace management & tabs
+│   │   ├── Profile/               # Login & profile display
+│   │   └── Fallback/              # Error boundaries
+│   ├── context/                   # Global app state (React Context)
+│   ├── hooks/                     # Custom hooks
+│   ├── lib/                       # CSV & OWL parsers + tests
+│   └── types/                     # TypeScript types
+├── mockData/                      # Mock files for dev Mode (CSV, OWL)
+├── docs/                          # Documentation... in the future
+├── Dockerfile
+├── docker-compose.yml
+└── vite.config.ts
 ```
 
 ---
