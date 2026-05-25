@@ -1,9 +1,11 @@
 import { createContext, type Dispatch, type SetStateAction } from "react";
-import type { Edge, Node } from "@xyflow/react";
+import type { ColorMode, Edge, Node } from "@xyflow/react";
 import type { Dataset, Mapping, Ontology } from "../types";
 
 export interface AppContextType {
   activeWorkspaceId: string | null;
+  colorMode: ColorMode;
+  setColorMode: (colorMode: ColorMode) => void;
   ontology: Ontology | null;
   setOntology: (ontology: Ontology | null) => void;
   dataset: Dataset | null;
@@ -11,6 +13,7 @@ export interface AppContextType {
   mappings: Mapping[];
   addMapping: (mapping: Mapping) => void;
   removeMapping: (mappingId: string) => void;
+  removeMappingsForNode: (nodeId: string) => void;
   clearMappings: () => void;
   flowNodes: Node[];
   flowEdges: Edge[];

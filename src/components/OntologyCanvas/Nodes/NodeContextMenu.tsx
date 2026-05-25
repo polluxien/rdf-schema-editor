@@ -27,13 +27,13 @@ function NodeContextMenu({
 
   return (
     <div
-      className="fixed w-48 bg-gray-700 border border-gray-600 rounded-md shadow-lg z-50"
+      className="fixed w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 dark:bg-gray-700 dark:border-gray-600"
       style={{ top: y, left: x }}
     >
       {["Jump to Column in Dataset", "Delete"].map((action) => (
         <button
           key={action}
-          className="block w-full text-left px-4 py-2 text-sm transition-colors hover:bg-gray-600 hover:text-white"
+          className="block w-full text-left px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-950 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white"
           onClick={() => actionHandler(action)}
         >
           {action}

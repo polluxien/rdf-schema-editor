@@ -1,26 +1,29 @@
 interface ToggleProps {
-  value: "object" | "ontology";
-  onChange: (value: "object" | "ontology") => void;
+  value: "column" | "ontology";
+  onChange: (value: "column" | "ontology") => void;
 }
 
 export const SegmentedToggle = ({ value, onChange }: ToggleProps) => {
-  const getStylesForOption = (optionValue: "object" | "ontology") => {
+  const getStylesForOption = (optionValue: "column" | "ontology") => {
     const isActive = value === optionValue;
     return {
-      background: isActive ? "#ffffff" : "transparent",
-      color: isActive ? "#1f2937" : "#9ca3af",
+      background: isActive ? "var(--toggle-active-bg)" : "transparent",
+      color: isActive ? "var(--toggle-active-text)" : "var(--toggle-text)",
       minWidth: "70px",
     };
   };
   return (
     <div
       className="flex rounded-full p-1 cursor-pointer select-none"
-      style={{ background: "#304674", width: "fit-content" }}
+      style={{
+        background: "var(--toggle-bg)",
+        width: "fit-content",
+      }}
     >
       <div
-        onClick={() => onChange("object")}
+        onClick={() => onChange("column")}
         className="flex items-center justify-center rounded-full px-4 py-1 text-xs font-bold transition-all duration-200"
-        style={getStylesForOption("object")}
+        style={getStylesForOption("column")}
       >
         Dataset
       </div>

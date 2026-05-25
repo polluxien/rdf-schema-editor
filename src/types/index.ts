@@ -1,17 +1,19 @@
+export interface OntologyProperty {
+  id: string;
+  uri: string;
+  label?: string;
+  type: "object" | "datatype";
+  domainUri?: string;
+  rangeUri?: string;
+  comment?: string;
+}
+
 export interface OntologyClass {
   id: string;
   uri: string;
   label: string;
-  description?: string;
+  subClassOfUris: string[];
   properties: OntologyProperty[];
-}
-
-export interface OntologyProperty {
-  id: string;
-  uri: string;
-  label: string;
-  description?: string;
-  range?: string;
 }
 
 export interface Ontology {
@@ -19,6 +21,7 @@ export interface Ontology {
   name: string;
   uri: string;
   classes: OntologyClass[];
+  properties: OntologyProperty[];
 }
 
 export interface DatasetColumn {

@@ -1,52 +1,16 @@
-import { useRef, useState } from "react";
-import { useAppContext } from "../../hooks/useAppContext";
-import type { CsvImportOptions } from "../../types/csvImport";
-import { parseCsvTextToDataset } from "../../lib/csvParse";
-import { parseOwlToOntology } from "../../lib/owlParse";
-import CsvImportDialog from "../CsvImportDialog";
+import { useRef } from "react";
+import { useFileImport } from "../FileImport/FileImportContext";
 
 export default function WorkspaceImportExport() {
-  const { setOntology, setDataset } = useAppContext();
-  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
-  const [pendingCsvFile, setPendingCsvFile] = useState<File | null>(null);
+  const { importFiles } = useFileImport();
   const csvInputRef = useRef<HTMLInputElement>(null);
   const owlInputRef = useRef<HTMLInputElement>(null);
 
-  const handleCsvFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    setPendingCsvFile(file);
-    setCsvDialogOpen(true);
-    if (csvInputRef.current) csvInputRef.current.value = "";
-  };
-
-  const handleCsvImportConfirm = (options: CsvImportOptions) => {
-    const file = pendingCsvFile;
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const dataset = parseCsvTextToDataset(text, file.name, options);
-      if (!dataset) return;
-      setDataset(dataset);
-    };
-    reader.readAsText(file, options.charset);
-    setCsvDialogOpen(false);
-    setPendingCsvFile(null);
-  };
-
-  const handleOwlImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      setOntology(parseOwlToOntology(text, file.name));
-    };
-    reader.readAsText(file);
-    if (owlInputRef.current) owlInputRef.current.value = "";
+    importFiles([file]);
+    event.target.value = "";
   };
 
   const handleExportTtl = () => {
@@ -67,11 +31,11 @@ export default function WorkspaceImportExport() {
   };
 
   const actionClass =
-    "text-gray-500 hover:text-gray-200 transition-colors disabled:opacity-40";
+    "text-gray-500 hover:text-gray-900 transition-colors disabled:opacity-40 dark:hover:text-gray-200";
 
   return (
-    <div className="flex items-center gap-3 px-3 py-1 text-xs border-b border-gray-800">
-      <span className="text-gray-600 select-none">import</span>
+    <div className="flex items-center gap-3 px-3 py-1 text-xs border-b border-gray-200 dark:border-gray-800">
+      <span className="text-gray-500 select-none dark:text-gray-600">import</span>
       <button
         type="button"
         onClick={() => csvInputRef.current?.click()}
@@ -86,8 +50,8 @@ export default function WorkspaceImportExport() {
       >
         owl
       </button>
-      <span className="text-gray-700">|</span>
-      <span className="text-gray-600 select-none">export</span>
+      <span className="text-gray-300 dark:text-gray-700">|</span>
+      <span className="text-gray-500 select-none dark:text-gray-600">export</span>
       <button type="button" onClick={handleExportTtl} className={actionClass}>
         ttl
       </button>
@@ -97,7 +61,7 @@ export default function WorkspaceImportExport() {
         type="file"
         accept=".csv"
         aria-label="CSV importieren"
-        onChange={handleCsvFileSelect}
+        onChange={handleFileSelect}
         className="hidden"
       />
       <input
@@ -105,18 +69,8 @@ export default function WorkspaceImportExport() {
         type="file"
         accept=".owl,.rdf,.xml"
         aria-label="OWL importieren"
-        onChange={handleOwlImport}
+        onChange={handleFileSelect}
         className="hidden"
-      />
-
-      <CsvImportDialog
-        isOpen={csvDialogOpen}
-        file={pendingCsvFile}
-        onClose={() => {
-          setCsvDialogOpen(false);
-          setPendingCsvFile(null);
-        }}
-        onConfirm={handleCsvImportConfirm}
       />
     </div>
   );

@@ -27,6 +27,7 @@ const DEFAULT_WORKSPACES: Workspace[] = [
   },
 ];
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const WorkspaceContext = createContext<WorkspaceContextType | null>(
   null,
 );
