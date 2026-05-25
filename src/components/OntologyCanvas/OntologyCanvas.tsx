@@ -1,9 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import {
   ReactFlow,
-  Background,
-  Controls,
-  MiniMap,
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
@@ -12,18 +9,19 @@ import {
   type NodeTypes,
   type OnConnect,
   Panel,
+  Background,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useAppContext } from "../../../hooks/useAppContext";
+import { useAppContext } from "../../hooks/useAppContext";
 
 //Component imports
-import OntologyClassNode from "../Nodes/OntologyClassNode";
-import OntologyAddObjectDialog from "../AddObjectDialog/OntologyAddObjectDialog";
-import DatasetColumnNode from "../Nodes/DatasetColumnNode";
-import NodeContextMenu from "../Nodes/NodeContextMenu";
-import CustomEdge from "./CustomEdge";
-import { EdgeEditProvider } from "./EdgeEditContext";
-import RelationshipDialog from "./RelationshipDialog";
+import OntologyClassNode from "./Nodes/OntologyClassNode";
+import OntologyAddObjectDialog from "./AddObjectDialog/OntologyAddObjectDialog";
+import DatasetColumnNode from "./Nodes/DatasetColumnNode";
+import NodeContextMenu from "./Nodes/NodeContextMenu";
+import CustomEdge from "./Relation/CustomEdge";
+import { EdgeEditProvider } from "./Relation/EdgeEditContext";
+import RelationshipDialog from "./Relation/RelationshipDialog";
 
 const nodeTypes: NodeTypes = {
   ontologyClass: OntologyClassNode,
@@ -35,7 +33,7 @@ const edgeTypes = {
 };
 
 export default function OntologyCanvas() {
-  const { setFocusedColumnId } = useAppContext();
+  const { setFocusedColumnId, colorMode } = useAppContext();
 
   const [showOntologyAddObjectDialog, setShowOntologyAddObjectDialog] =
     useState(false);
@@ -144,14 +142,8 @@ export default function OntologyCanvas() {
     [flowEdges],
   );
 
-  const closeAllMenus = () => {
-    setMenu(null);
-    setShowRelationshipDialog(false);
-    setSelectedEdgeData(null);
-  };
-
   return (
-    <div className="flex-1 bg-gray-950 relative">
+    <div className="flex-1 relative">
       <EdgeEditProvider onEdit={handleEdgeClick}>
         <ReactFlow
           nodes={flowNodes}
@@ -167,8 +159,6 @@ export default function OntologyCanvas() {
           onEdgeClick={(_, edge) => handleEdgeClick(edge.id)}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
-          fitView
-          className="bg-gray-950"
           //Context menu handling: open custom menu on right-click, close on any click or move
           onNodeContextMenu={(event, node) => {
             // ? only show context menu for dataset column nodes (at the moment, could be extended to ontology class nodes as well)
@@ -176,15 +166,29 @@ export default function OntologyCanvas() {
             event.preventDefault();
             setMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
           }}
-          onPaneClick={() => closeAllMenus()}
-          onNodeClick={() => closeAllMenus()}
-          onMove={() => closeAllMenus()}
-          onClick={() => closeAllMenus()}
+          onPaneClick={() => {
+            setMenu(null);
+            handleCloseDialog();
+          }}
+          onNodeClick={() => setMenu(null)}
+          onMove={() => setMenu(null)}
+          onClick={() => setMenu(null)}
           // ? Attribution is required by the license of reactflow, but we can style it to be less obtrusive
           attributionPosition="bottom-left"
+          colorMode={colorMode ?? "dark"}
+          fitView
         >
-          <Background color="#374151" gap={20} />
-          <Controls className="bg-gray-800 border-gray-600 text-white [&>button]:bg-gray-800 [&>button]:border-gray-600 [&>button]:text-white [&>button:hover]:bg-gray-700" />
+          <Background gap={20} />
+          {/*
+          <Controls
+            showZoom={true}
+            showFitView={true}
+            showInteractive={false}
+            bgColor="#374151"
+          />
+          */}
+
+          {/*
           {hasContent && (
             <MiniMap
               nodeColor={(node) => {
@@ -192,9 +196,12 @@ export default function OntologyCanvas() {
                 if (node.type === "datasetColumn") return "#3b82f6";
                 return "#6b7280";
               }}
+              bgColor="#374151"
               className="bg-gray-800 border-gray-600"
+              //maskStrokeColor="transparent"
             />
           )}
+            */}
 
           {!hasContent && (
             <Panel position="top-center" className="mt-20">
@@ -212,12 +219,31 @@ export default function OntologyCanvas() {
 
           {!showOntologyAddObjectDialog && (
             <Panel position="top-right" className="m-4">
-              <button
-                onClick={() => setShowOntologyAddObjectDialog(true)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded hover:bg-gray-700 transition-colors bg-gray-800 border border-gray-600 text-white"
-              >
-                Add Object
-              </button>
+              <div className="relative group">
+                <button
+                  onClick={() => setShowOntologyAddObjectDialog(true)}
+                  className="flex items-center gap-2 bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 rounded border border-gray-700"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    className="w-6 h-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 4.5v15m7.5-7.5h-15"
+                    />
+                  </svg>
+                </button>
+
+                <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-gray-800 border border-gray-600 text-white text-sm px-2 py-1 rounded pointer-events-none">
+                  add object
+                </div>
+              </div>
             </Panel>
           )}
 

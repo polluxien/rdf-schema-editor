@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import type { Edge, Node } from "@xyflow/react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import type { ColorMode, Edge, Node } from "@xyflow/react";
 import type { Dataset, Mapping, Ontology } from "../types";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { AppContext } from "./AppContextType";
@@ -10,6 +16,9 @@ const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === "true";
 export function AppProvider({ children }: { children: ReactNode }) {
   const { activeWorkspaceId, getWorkspaceData, updateWorkspaceData } =
     useWorkspace();
+  const [colorMode, setLocalColorMode] = useState<ColorMode | null>(
+    (localStorage.getItem("colorMode") as ColorMode) ?? "dark",
+  );
 
   const data = activeWorkspaceId ? getWorkspaceData(activeWorkspaceId) : null;
 
@@ -109,6 +118,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [patch],
   );
 
+  const setColorMode = useCallback((mode: ColorMode) => {
+    setLocalColorMode(mode); // <--- Hier den umbenannten Setter aufrufen!
+    localStorage.setItem("colorMode", mode);
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -127,6 +141,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setFlowEdges,
         focusedColumnId,
         setFocusedColumnId,
+        colorMode: colorMode ?? null,
+        setColorMode,
       }}
     >
       {children}
