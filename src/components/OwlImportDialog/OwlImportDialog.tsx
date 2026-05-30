@@ -6,7 +6,7 @@ import {
   type OwlApiConfig,
 } from "../../backend/owlApi";
 
-const BIOPORTAL_API_URL = "https://data.bioontology.org";
+const BIOPORTAL_API_URL = "https://data.biodivportal.gfbio.org";
 
 type ImportMode = "file" | "api";
 
@@ -179,9 +179,9 @@ export default function OwlImportDialog({
               {/* API Info */}
               <div className="bg-gray-100 rounded px-3 py-2 text-sm dark:bg-gray-900">
                 <span className="text-gray-500 dark:text-gray-400">Source:</span>{" "}
-                <span className="text-gray-900 dark:text-white">BioPortal</span>
+                <span className="text-gray-900 dark:text-white">BioDivPortal</span>
                 <span className="text-gray-400 ml-2 text-xs">
-                  (data.bioontology.org)
+                  (data.biodivportal.gfbio.org)
                 </span>
               </div>
 
@@ -213,12 +213,12 @@ export default function OwlImportDialog({
                 <p className="text-xs text-gray-400 mt-1">
                   Get your API key from{" "}
                   <a
-                    href="https://bioportal.bioontology.org/account"
+                    href="https://biodivportal.gfbio.org/account"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-500 hover:underline"
                   >
-                    bioportal.bioontology.org/account
+                    biodivportal.gfbio.org/account
                   </a>
                 </p>
               </div>

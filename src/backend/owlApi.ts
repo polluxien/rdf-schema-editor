@@ -59,24 +59,24 @@ export async function downloadOwlFile(
   config: OwlApiConfig,
   signal?: AbortSignal,
 ): Promise<OwlDownloadResult> {
-  const url = `${config.baseUrl}/ontologies/${ontologyAcronym}/latest_submission?display=all`;
+  const url = `${config.baseUrl}/ontologies/${ontologyAcronym}/submissions?display=all`;
   const response = await fetchWithErrorHandling(url, {
     method: "GET",
     headers: buildHeaders(config),
     signal,
   });
+
   const submissionData = await response.json();
-  const download_url = submissionData.dataDump;
-
-  if (!download_url) {
-    throw new Error(`No dataDump URL found for ontology: ${ontologyAcronym}`);
-  }
-
-  const download_response = await fetchWithErrorHandling(download_url, {
+  const download_response = await fetchWithErrorHandling(`${submissionData[0].dataDump}`, {
     method: "GET",
     headers: buildHeaders(config),
     signal,
   });
+
+  if (!download_response.ok) {
+    throw new Error(`Failed to download ontology: ${ontologyAcronym}`);
+  }
+
   const content = await download_response.text();
   const contentType = download_response.headers.get("Content-Type") ?? "application/rdf+xml";
   const contentDisposition = download_response.headers.get("Content-Disposition");
