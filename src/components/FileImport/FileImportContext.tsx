@@ -28,8 +28,15 @@ interface PendingCsvImport {
   destination: ImportDestination;
 }
 
+interface PendingContentImport {
+  content: string;
+  name: string;
+  doImport: (destination: ImportDestination) => void;
+}
+
 interface FileImportContextType {
   importFiles: (files: File[] | FileList) => void;
+  importOntologyFromContent: (content: string, name: string) => void;
 }
 
 const FileImportContext = createContext<FileImportContextType | undefined>(
@@ -65,6 +72,8 @@ export function FileImportProvider({ children }: { children: ReactNode }) {
   const [pendingConflict, setPendingConflict] =
     useState<PendingConflict | null>(null);
   const [importingLabel, setImportingLabel] = useState<string | null>(null);
+  const [pendingContentImport, setPendingContentImport] =
+    useState<PendingContentImport | null>(null);
 
   const openInNewWorkspace = useCallback(
     (file: File, data: { ontology?: Ontology; dataset?: Dataset }) => {
@@ -171,6 +180,16 @@ export function FileImportProvider({ children }: { children: ReactNode }) {
     const pending = pendingConflict;
     if (!pending) return;
     setPendingConflict(null);
+
+    // Handle content import (from API)
+    if (pendingContentImport) {
+      const { doImport } = pendingContentImport;
+      setPendingContentImport(null);
+      doImport("current");
+      return;
+    }
+
+    // Handle file import
     proceedWithFile(pending.file, pending.kind, "current");
   };
 
@@ -178,13 +197,70 @@ export function FileImportProvider({ children }: { children: ReactNode }) {
     const pending = pendingConflict;
     if (!pending) return;
     setPendingConflict(null);
+
+    // Handle content import (from API)
+    if (pendingContentImport) {
+      const { doImport } = pendingContentImport;
+      setPendingContentImport(null);
+      doImport("new-workspace");
+      return;
+    }
+
+    // Handle file import
     proceedWithFile(pending.file, pending.kind, "new-workspace");
   };
 
   const conflictLabel =
     pendingConflict?.kind === "ontology" ? "ontology" : "dataset";
 
-  const value = useMemo(() => ({ importFiles }), [importFiles]);
+  const importOntologyFromContent = useCallback(
+    (content: string, name: string) => {
+      const hasExisting = !!ontology;
+
+      const doImport = (destination: ImportDestination) => {
+        setImportingLabel("Importing ontology...");
+        try {
+          const parsedOntology = parseOwlToOntology(content, name);
+          if (destination === "new-workspace") {
+            const workspaceId = crypto.randomUUID();
+            const baseName = name.replace(/\.[^/.]+$/, "") || "import";
+            addWorkspace({
+              id: workspaceId,
+              name: baseName,
+              description: "",
+            });
+            updateWorkspaceData(workspaceId, (prev) => ({
+              ...prev,
+              ontology: parsedOntology,
+              mappings: [],
+              flowNodes: [],
+              flowEdges: [],
+            }));
+          } else {
+            setOntology(parsedOntology);
+          }
+        } finally {
+          setImportingLabel(null);
+        }
+      };
+
+      if (hasExisting) {
+        // Create a fake File object for the conflict dialog
+        const fakeFile = new File([""], name);
+        setPendingConflict({ kind: "ontology", file: fakeFile });
+        // Store the content import handler
+        setPendingContentImport({ content, name, doImport });
+      } else {
+        doImport("current");
+      }
+    },
+    [ontology, setOntology, addWorkspace, updateWorkspaceData],
+  );
+
+  const value = useMemo(
+    () => ({ importFiles, importOntologyFromContent }),
+    [importFiles, importOntologyFromContent],
+  );
 
   return (
     <FileImportContext.Provider value={value}>
@@ -208,7 +284,10 @@ export function FileImportProvider({ children }: { children: ReactNode }) {
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setPendingConflict(null)}
+                onClick={() => {
+                  setPendingConflict(null);
+                  setPendingContentImport(null);
+                }}
                 className="rounded px-3 py-1.5 text-sm text-gray-600 transition-colors hover:text-gray-950 dark:text-gray-300 dark:hover:text-white"
               >
                 Cancel

@@ -1,10 +1,12 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useFileImport } from "../FileImport/FileImportContext";
+import OwlImportDialog from "../OwlImportDialog";
 
 export default function WorkspaceImportExport() {
-  const { importFiles } = useFileImport();
+  const { importFiles, importOntologyFromContent } = useFileImport();
   const csvInputRef = useRef<HTMLInputElement>(null);
   const owlInputRef = useRef<HTMLInputElement>(null);
+  const [owlDialogOpen, setOwlDialogOpen] = useState(false);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -45,7 +47,7 @@ export default function WorkspaceImportExport() {
       </button>
       <button
         type="button"
-        onClick={() => owlInputRef.current?.click()}
+        onClick={() => setOwlDialogOpen(true)}
         className={actionClass}
       >
         owl
@@ -71,6 +73,13 @@ export default function WorkspaceImportExport() {
         aria-label="OWL importieren"
         onChange={handleFileSelect}
         className="hidden"
+      />
+
+      <OwlImportDialog
+        isOpen={owlDialogOpen}
+        onClose={() => setOwlDialogOpen(false)}
+        onImportFromFile={() => owlInputRef.current?.click()}
+        onImportFromContent={importOntologyFromContent}
       />
     </div>
   );

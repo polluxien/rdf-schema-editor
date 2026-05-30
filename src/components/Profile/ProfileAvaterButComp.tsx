@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { LoginDialog } from "./LoginDialogCom";
 import { deleteLogin } from "../../backend/api";
 import { useLoginContext } from "../../backend/LoginInfo";
+import { ApiKeySettings } from "./ApiKeySettings";
 
 function ProfileAvatarButton() {
   const [open, setOpen] = useState(false);
@@ -9,6 +10,7 @@ function ProfileAvatarButton() {
 
   const { loginInfo, setLoginInfo } = useLoginContext();
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [showApiKeySettings, setShowApiKeySettings] = useState(false);
 
   // Führe Logout (mittels api.ts/deleteLogin) durch
   const doLogout = async () => {
@@ -61,6 +63,18 @@ function ProfileAvatarButton() {
               </li>
             ))}
             <li>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowApiKeySettings(true);
+                  setOpen(false);
+                }}
+                className="block w-full text-left p-2 text-gray-700 hover:bg-gray-100 hover:text-gray-950 rounded-md transition-colors dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+              >
+                API Key
+              </button>
+            </li>
+            <li>
               <a
                 href="#"
                 className="block w-full p-2 text-red-500 hover:bg-gray-100 rounded-md transition-colors dark:text-red-400 dark:hover:bg-gray-800"
@@ -70,6 +84,19 @@ function ProfileAvatarButton() {
               </a>
             </li>
           </ul>
+        </div>
+      )}
+
+      {showApiKeySettings && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowApiKeySettings(false);
+          }}
+        >
+          <div className="relative w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-lg p-6 dark:bg-gray-900 dark:border-gray-700">
+            <ApiKeySettings onClose={() => setShowApiKeySettings(false)} />
+          </div>
         </div>
       )}
     </div>
