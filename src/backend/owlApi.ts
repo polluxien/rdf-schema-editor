@@ -67,14 +67,30 @@ export async function downloadOwlFile(
   });
 
   const submissionData = await response.json();
-  const download_response = await fetchWithErrorHandling(`${submissionData[0].dataDump}`, {
-    method: "GET",
-    headers: buildHeaders(config),
-    signal,
-  });
+  let download_url = submissionData[0].dataDump;
+  let download_response: Response;
 
-  if (!download_response.ok) {
-    throw new Error(`Failed to download ontology: ${ontologyAcronym}`);
+  try {
+    download_response = await fetch(download_url, {
+      method: "GET",
+      headers: buildHeaders(config),
+      signal,
+    });
+  } catch {
+    download_response = null as unknown as Response;
+  }
+
+  if (!download_response?.ok) {
+    // I saw that sometimes 192.168.56.10:8080 doesn't work so replacing it is worht a try.
+    download_url = download_url.replace("http://192.168.56.10:8080", config.baseUrl);
+    download_response = await fetch(download_url, {
+      method: "GET",
+      headers: buildHeaders(config),
+      signal,
+    });
+    if (!download_response.ok) {
+      throw new Error(`Failed to download ontology: ${ontologyAcronym}`);
+    }
   }
 
   const content = await download_response.text();
