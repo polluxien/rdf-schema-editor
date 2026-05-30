@@ -5,6 +5,7 @@ import {
   downloadOwlFile,
   type OwlApiConfig,
 } from "../../backend/owlApi";
+import { getStoredApiKey } from "../../hooks/useApiKey";
 
 const BIOPORTAL_API_URL = "https://data.biodivportal.gfbio.org";
 
@@ -24,7 +25,7 @@ export default function OwlImportDialog({
   onImportFromContent,
 }: OwlImportDialogProps) {
   const [mode, setMode] = useState<ImportMode>("file");
-  const [apiKey, setApiKey] = useState("");
+  const [apiKey, setApiKey] = useState(() => getStoredApiKey());
   const [ontologies, setOntologies] = useState<[string, string][]>([]);
   const [selectedOntology, setSelectedOntology] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,7 +34,7 @@ export default function OwlImportDialog({
   const [error, setError] = useState<string | null>(null);
 
   const resetState = useCallback(() => {
-    setApiKey("");
+    setApiKey(getStoredApiKey());
     setOntologies([]);
     setSelectedOntology(null);
     setSearchQuery("");
