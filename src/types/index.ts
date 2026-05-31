@@ -1,8 +1,10 @@
 export interface OntologyProperty {
   id: string;
   uri: string;
-  label?: string;
+  label: string;
   type: "object" | "datatype";
+  domainUris: string[];
+  rangeUris: string[];
   domainUri?: string;
   rangeUri?: string;
   comment?: string;
@@ -42,6 +44,8 @@ export interface Mapping {
   sourceColumnId: string;
   targetClassId: string;
   targetPropertyId?: string;
+  status: "draft" | "confirmed" | "uncertain" | "rejected";
+  note?: string;
 }
 
 export interface AppState {

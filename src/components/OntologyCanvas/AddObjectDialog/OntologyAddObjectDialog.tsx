@@ -3,6 +3,7 @@ import type { Node as FlowNode } from "@xyflow/react";
 import { SegmentedToggle } from "./ToggleComponent";
 import { useAppContext } from "../../../hooks/useAppContext";
 import type { DatasetColumn, OntologyClass } from "../../../types";
+import { getLabelListBySequence } from "../../../lib/SortSDataByequence";
 
 interface OntologyAddObjectDialogProps {
   addNodesToCanvas: (newNode: FlowNode) => void;
@@ -76,56 +77,6 @@ function OntologyAddObjectDialog({
     }
   };
 
-  // * Helper functions
-  const getLabelListBySequence = (
-    type: "column" | "ontology",
-  ): (DatasetColumn | OntologyClass)[] => {
-    // get list
-    let items: (DatasetColumn | OntologyClass)[] = [];
-    if (type === "column" && dataset?.columns) {
-      items = [...dataset.columns] as DatasetColumn[];
-    } else if (ontology?.classes) {
-      items = [...ontology.classes] as OntologyClass[];
-    }
-
-    //filter by search term
-    if (searchTerm !== "" && items.length > 0) {
-      items = items.filter((item) => {
-        const label =
-          viewMode === "column"
-            ? (item as DatasetColumn).name
-            : (item as OntologyClass).label;
-        return label.toLowerCase().includes(searchTerm.toLowerCase());
-      });
-    }
-
-    // sort by name or position
-    items.sort((a, b) => {
-      const labelA =
-        viewMode === "column"
-          ? (a as DatasetColumn).name
-          : (a as OntologyClass).label;
-      const labelB =
-        viewMode === "column"
-          ? (b as DatasetColumn).name
-          : (b as OntologyClass).label;
-
-      switch (sortType) {
-        case "BY_POSITION_START":
-          return 0;
-        case "BY_POSITION_END":
-          return 0;
-        case "BY_NAME_ABC":
-          return labelA.localeCompare(labelB);
-        case "BY_NAME_CBA":
-          return labelB.localeCompare(labelA);
-        default:
-          return 0;
-      }
-    });
-    return sortType === "BY_POSITION_END" ? items.reverse() : items;
-  };
-
   const createID = (label: unknown) => {
     return (
       // eslint-disable-next-line react-hooks/purity
@@ -137,13 +88,24 @@ function OntologyAddObjectDialog({
     viewMode === "column"
       ? dataset?.columns && dataset.columns.length > 0
       : ontology?.classes && ontology.classes.length > 0;
-  const currentList = getLabelListBySequence(viewMode);
+
+  const currentList = getLabelListBySequence(
+    searchTerm,
+    sortType,
+    viewMode,
+    viewMode,
+    viewMode === "column"
+      ? ((dataset?.columns ?? []) as DatasetColumn[])
+      : ((ontology?.classes ?? []) as OntologyClass[]),
+  );
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-lg w-80 dark:bg-gray-800 dark:border-gray-600">
       {/* close button */}
       <div className="w-full mb-4 flex items-center justify-between border-b border-gray-200 pb-3 dark:border-gray-700">
-        <span className="text-sm font-medium text-gray-900 dark:text-gray-200">Add Object</span>
+        <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
+          Add Object
+        </span>
         <button
           className="text-gray-500 hover:text-red-500 transition-colors dark:text-gray-400 dark:hover:text-red-400"
           onClick={closeDialog}

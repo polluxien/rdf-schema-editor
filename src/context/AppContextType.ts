@@ -12,6 +12,10 @@ export interface AppContextType {
   setDataset: (dataset: Dataset | null) => void;
   mappings: Mapping[];
   addMapping: (mapping: Mapping) => void;
+  updateMapping: (
+    mappingId: string,
+    updater: (mapping: Mapping) => Mapping,
+  ) => void;
   removeMapping: (mappingId: string) => void;
   removeMappingsForNode: (nodeId: string) => void;
   clearMappings: () => void;

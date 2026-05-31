@@ -119,6 +119,7 @@ export default function OntologyCanvas() {
           id: crypto.randomUUID(),
           sourceColumnId: sourceId,
           targetClassId: targetId,
+          status: "draft",
         });
       }
     },
@@ -328,7 +329,9 @@ export default function OntologyCanvas() {
           )}
 
           {(!hasContent || isDraggingOver) && (
-            <DragAndDropZone showDragAndDropZone={!hasContent || isDraggingOver} />
+            <DragAndDropZone
+              showDragAndDropZone={!hasContent || isDraggingOver}
+            />
           )}
 
           {hasContent && (
@@ -368,9 +371,16 @@ export default function OntologyCanvas() {
           <RelationshipDialog
             closeDialog={handleCloseDialog}
             selectedEdgeData={selectedEdgeData}
+            edgeData={selectedEdgeData}
+            destroyRelationship={() => {
+              // Implement logic to remove the mapping associated with this edge.
+              // This might involve updating the global state to remove the mapping and then calling closeDialog().
+              handleCloseDialog();
+            }}
           />
         </div>
       )}
+
       {
         //saftey safty check to only show context menu when all necessary data is available
         menu?.nodeId && menu?.x !== undefined && menu?.y !== undefined && (

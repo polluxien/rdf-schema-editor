@@ -94,15 +94,28 @@ export function parseOwlToOntology(
           return null;
         }
 
+        const domainUris = toArray(p["rdfs:domain"])
+          .map(extractUri)
+          .filter((u): u is string => !!u);
+        const rangeUris = toArray(p["rdfs:range"])
+          .map(extractUri)
+          .filter((u): u is string => !!u);
+        const label =
+          extractLiteral(toArray(p["rdfs:label"])[0]) ||
+          uri.split(/[#/]/).pop() ||
+          uri;
+
         return {
           // Stabile ID aus dem URI ableiten
           id: uri,
           uri,
           type,
-          label: extractLiteral(toArray(p["rdfs:label"])[0]) || undefined,
+          label,
           comment: extractLiteral(toArray(p["rdfs:comment"])[0]) || undefined,
-          domainUri: extractUri(toArray(p["rdfs:domain"])[0]),
-          rangeUri: extractUri(toArray(p["rdfs:range"])[0]),
+          domainUris,
+          rangeUris,
+          domainUri: domainUris[0],
+          rangeUri: rangeUris[0],
         };
       })
       .filter((p): p is OntologyProperty => p !== null);
@@ -147,8 +160,9 @@ export function parseOwlToOntology(
   const classByUri = new Map(classes.map((c) => [c.uri, c]));
 
   for (const prop of properties) {
-    if (prop.domainUri) classByUri.get(prop.domainUri)?.properties.push(prop);
-    // rangeUri nicht nochmal zuweisen, außer du willst inverse Richtung explizit
+    for (const domainUri of prop.domainUris) {
+      classByUri.get(domainUri)?.properties.push(prop);
+    }
   }
 
   console.log(
