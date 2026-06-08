@@ -2,9 +2,15 @@ export interface OntologyProperty {
   id: string;
   uri: string;
   label?: string;
-  type: "object" | "datatype";
+  type: "object" | "datatype" | "annotation";
   domainUri?: string;
   rangeUri?: string;
+  domainUris?: string[];
+  rangeUris?: string[];
+  subPropertyOfUris?: string[];
+  inverseOfUri?: string;
+  characteristics?: string[];
+  datatype?: string;
   comment?: string;
 }
 

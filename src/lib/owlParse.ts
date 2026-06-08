@@ -1,6 +1,16 @@
 import { XMLParser } from "fast-xml-parser";
 import type { Ontology, OntologyClass, OntologyProperty } from "../types";
 
+type PropertyType = OntologyProperty["type"];
+type XmlRecord = Record<string, unknown>;
+
+const OWL_OBJECT_PROPERTY = "http://www.w3.org/2002/07/owl#ObjectProperty";
+const OWL_DATATYPE_PROPERTY = "http://www.w3.org/2002/07/owl#DatatypeProperty";
+const OWL_ANNOTATION_PROPERTY =
+  "http://www.w3.org/2002/07/owl#AnnotationProperty";
+const RDF_PROPERTY = "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property";
+const XML_SCHEMA_NS = "http://www.w3.org/2001/XMLSchema#";
+
 // ── Hilfsfunktionen ──────────────────────────────────────────────────────────
 
 /** Extrahiert einen RDF-URI aus einem geparsten Knoten. */
@@ -21,6 +31,29 @@ function extractUri(node: unknown): string | undefined {
   return undefined;
 }
 
+function extractUris(node: unknown): string[] {
+  if (!node) return [];
+  if (typeof node === "string") return [node];
+  if (Array.isArray(node)) return node.flatMap(extractUris);
+  if (typeof node !== "object") return [];
+
+  const obj = node as XmlRecord;
+  const directUri = extractUri(obj);
+  if (directUri) return [directUri];
+
+  return Object.entries(obj)
+    .filter(([key]) => !key.startsWith("@_") && key !== "#text")
+    .flatMap(([, value]) => extractUris(value));
+}
+
+function unique(values: Array<string | undefined>): string[] {
+  return [...new Set(values.filter((value): value is string => !!value))];
+}
+
+function localName(uri: string): string {
+  return uri.split(/[#/]/).pop() || uri;
+}
+
 /** Extrahiert einen RDF-Literal-String (rdfs:label, rdfs:comment …). */
 function extractLiteral(node: unknown): string {
   if (!node) return "";
@@ -33,10 +66,71 @@ function extractLiteral(node: unknown): string {
   return "";
 }
 
+function extractLiterals(node: unknown): string[] {
+  return unique(toArray(node).map(extractLiteral).filter(Boolean));
+}
+
 /** Normalisiert einen Wert immer zu einem Array. */
 function toArray<T>(value: T | T[] | undefined): T[] {
   if (!value) return [];
   return Array.isArray(value) ? value : [value];
+}
+
+function inferPropertyType(
+  fallbackType: PropertyType | undefined,
+  rdfTypes: string[],
+  rangeUris: string[],
+): PropertyType | undefined {
+  if (fallbackType) return fallbackType;
+  if (rdfTypes.includes(OWL_ANNOTATION_PROPERTY)) return "annotation";
+  if (rdfTypes.includes(OWL_DATATYPE_PROPERTY)) return "datatype";
+  if (rdfTypes.includes(OWL_OBJECT_PROPERTY)) return "object";
+  if (rangeUris.some((uri) => uri.startsWith(XML_SCHEMA_NS))) return "datatype";
+  if (rdfTypes.includes(RDF_PROPERTY)) return "object";
+  return undefined;
+}
+
+function mergeProperties(
+  current: OntologyProperty | undefined,
+  next: OntologyProperty,
+): OntologyProperty {
+  if (!current) return next;
+
+  const domainUris = unique([
+    ...(current.domainUris ?? []),
+    current.domainUri,
+    ...(next.domainUris ?? []),
+    next.domainUri,
+  ]);
+  const rangeUris = unique([
+    ...(current.rangeUris ?? []),
+    current.rangeUri,
+    ...(next.rangeUris ?? []),
+    next.rangeUri,
+  ]);
+  const subPropertyOfUris = unique([
+    ...(current.subPropertyOfUris ?? []),
+    ...(next.subPropertyOfUris ?? []),
+  ]);
+  const characteristics = unique([
+    ...(current.characteristics ?? []),
+    ...(next.characteristics ?? []),
+  ]);
+
+  return {
+    ...current,
+    ...next,
+    label: next.label ?? current.label,
+    comment: next.comment ?? current.comment,
+    domainUri: domainUris[0],
+    rangeUri: rangeUris[0],
+    domainUris,
+    rangeUris,
+    subPropertyOfUris,
+    inverseOfUri: next.inverseOfUri ?? current.inverseOfUri,
+    characteristics,
+    datatype: next.datatype ?? current.datatype,
+  };
 }
 
 // ── Hauptfunktion ────────────────────────────────────────────────────────────
@@ -55,11 +149,21 @@ export function parseOwlToOntology(
         "owl:Class",
         "owl:ObjectProperty",
         "owl:DatatypeProperty",
+        "owl:AnnotationProperty",
+        "rdf:Description",
         "rdfs:subClassOf",
         "rdfs:label",
         "rdfs:comment",
         "rdfs:domain",
         "rdfs:range",
+        "rdfs:subPropertyOf",
+        "rdf:type",
+        "owl:inverseOf",
+        "owl:equivalentProperty",
+        "owl:onProperty",
+        "owl:someValuesFrom",
+        "owl:allValuesFrom",
+        "owl:hasValue",
       ].includes(tagName),
   });
 
@@ -79,41 +183,75 @@ export function parseOwlToOntology(
 
   // ── Properties ──────────────────────────────────────────────────────────────
 
-  function parseProperties(
-    nodes: unknown[],
-    type: "object" | "datatype",
-  ): OntologyProperty[] {
+  function parseProperties(nodes: unknown[], type?: PropertyType): OntologyProperty[] {
     return nodes
       .map((prop: unknown): OntologyProperty | null => {
         if (typeof prop !== "object" || !prop) return null;
         const p = prop as Record<string, unknown>;
 
         const uri = extractUri(p);
-        if (!uri) {
-          console.warn("[Warn] Property ohne URI übersprungen:", p);
-          return null;
-        }
+        if (!uri) return null;
+
+        const rdfTypes = unique(toArray(p["rdf:type"]).map(extractUri));
+        const domainUris = unique(toArray(p["rdfs:domain"]).flatMap(extractUris));
+        const rangeUris = unique(toArray(p["rdfs:range"]).flatMap(extractUris));
+        const propertyType = inferPropertyType(type, rdfTypes, rangeUris);
+        if (!propertyType) return null;
+
+        const label =
+          extractLiterals(p["rdfs:label"])[0] ||
+          extractLiterals(p["skos:prefLabel"])[0] ||
+          localName(uri);
+        const comment = extractLiterals(p["rdfs:comment"])[0] || undefined;
+        const datatype = rangeUris.find((rangeUri) =>
+          rangeUri.startsWith(XML_SCHEMA_NS),
+        );
+
+        const characteristicTypes = rdfTypes.filter(
+          (rdfType) =>
+            rdfType !== OWL_OBJECT_PROPERTY &&
+            rdfType !== OWL_DATATYPE_PROPERTY &&
+            rdfType !== OWL_ANNOTATION_PROPERTY &&
+            rdfType !== RDF_PROPERTY,
+        );
 
         return {
-          // Stabile ID aus dem URI ableiten
           id: uri,
           uri,
-          type,
-          label: extractLiteral(toArray(p["rdfs:label"])[0]) || undefined,
-          comment: extractLiteral(toArray(p["rdfs:comment"])[0]) || undefined,
-          domainUri: extractUri(toArray(p["rdfs:domain"])[0]),
-          rangeUri: extractUri(toArray(p["rdfs:range"])[0]),
+          type: propertyType,
+          label,
+          comment,
+          domainUri: domainUris[0],
+          rangeUri: rangeUris[0],
+          domainUris,
+          rangeUris,
+          subPropertyOfUris: unique(
+            toArray(p["rdfs:subPropertyOf"]).flatMap(extractUris),
+          ),
+          inverseOfUri: extractUri(toArray(p["owl:inverseOf"])[0]),
+          characteristics: characteristicTypes.map(localName),
+          datatype: datatype ? localName(datatype) : undefined,
         };
       })
       .filter((p): p is OntologyProperty => p !== null);
   }
 
-  const properties: OntologyProperty[] = [
+  const propertyDeclarations: OntologyProperty[] = [
     ...parseProperties(toArray(rdf["owl:ObjectProperty"]), "object"),
     ...parseProperties(toArray(rdf["owl:DatatypeProperty"]), "datatype"),
+    ...parseProperties(toArray(rdf["owl:AnnotationProperty"]), "annotation"),
+    ...parseProperties(toArray(rdf["rdf:Description"])),
   ];
 
-  console.log(`[Debug] Extrahierte Properties: ${properties.length}`);
+  const propertyByUri = new Map<string, OntologyProperty>();
+  for (const property of propertyDeclarations) {
+    propertyByUri.set(
+      property.uri,
+      mergeProperties(propertyByUri.get(property.uri), property),
+    );
+  }
+
+  const properties = [...propertyByUri.values()];
 
   // ── Klassen ─────────────────────────────────────────────────────────────────
 
@@ -134,7 +272,7 @@ export function parseOwlToOntology(
         uri,
         label:
           extractLiteral(toArray(c["rdfs:label"])[0]) ||
-          uri.split(/[#/]/).pop() ||
+          localName(uri) ||
           "Unbenannt",
         subClassOfUris,
         properties: [],
@@ -147,18 +285,10 @@ export function parseOwlToOntology(
   const classByUri = new Map(classes.map((c) => [c.uri, c]));
 
   for (const prop of properties) {
-    if (prop.domainUri) classByUri.get(prop.domainUri)?.properties.push(prop);
-    // rangeUri nicht nochmal zuweisen, außer du willst inverse Richtung explizit
+    for (const domainUri of prop.domainUris ?? []) {
+      classByUri.get(domainUri)?.properties.push(prop);
+    }
   }
-
-  console.log(
-    "Class URIs:",
-    classes.map((c) => c.uri),
-  );
-  console.log(
-    "Domain URIs:",
-    properties.map((p) => p.domainUri),
-  );
 
   return {
     id: fileName,

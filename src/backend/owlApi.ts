@@ -114,6 +114,8 @@ export function validateOwlContent(
   content: string,
   contentType: string,
 ): boolean {
+  void content;
+  void contentType;
   // TODO: Implement validation
   // - Check for valid XML/Turtle/JSON-LD syntax
   // - Verify it contains OWL constructs

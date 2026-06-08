@@ -150,6 +150,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [patch],
   );
 
+  const updateMappingProperty = useCallback(
+    (mappingId: string, targetPropertyId?: string) =>
+      patch((prev) => ({
+        mappings: prev.mappings.map((mapping) =>
+          mapping.id === mappingId ? { ...mapping, targetPropertyId } : mapping,
+        ),
+      })),
+    [patch],
+  );
+
   const removeMapping = useCallback(
     (mappingId: string) =>
       patch((prev) => ({
@@ -223,6 +233,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setDataset,
         mappings: data?.mappings ?? [],
         addMapping,
+        updateMappingProperty,
         removeMapping,
         removeMappingsForNode,
         clearMappings,
