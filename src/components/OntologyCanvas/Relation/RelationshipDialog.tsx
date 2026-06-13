@@ -2,11 +2,12 @@ import { useMemo, useState } from "react";
 import type { Edge } from "@xyflow/react";
 import { Database, Link2, Search, Tags, X } from "lucide-react";
 import { useAppContext } from "../../../hooks/useAppContext";
-import type { OntologyClass, OntologyProperty } from "../../../types";
+import type { Mapping, OntologyClass, OntologyProperty } from "../../../types";
 
 interface RelationshipDialogProps {
   selectedEdgeData: Edge;
   closeDialog: () => void;
+  destroyRelationship: (mapping: Mapping | undefined) => void;
 }
 
 function shortName(uri: string): string {
@@ -52,8 +53,10 @@ function getAvailableProperties(
 function RelationshipDialog({
   selectedEdgeData,
   closeDialog,
+  destroyRelationship,
 }: RelationshipDialogProps) {
-  const { dataset, ontology, mappings, updateMappingProperty } = useAppContext();
+  const { dataset, ontology, mappings, updateMappingProperty } =
+    useAppContext();
   const [query, setQuery] = useState("");
 
   const columnId = selectedEdgeData.source.replace("column-", "");
@@ -61,7 +64,8 @@ function RelationshipDialog({
   const column = dataset?.columns.find((c) => c.id === columnId);
   const ontologyClass = ontology?.classes.find((c) => c.id === classId);
   const mapping = mappings.find(
-    (item) => item.sourceColumnId === columnId && item.targetClassId === classId,
+    (item) =>
+      item.sourceColumnId === columnId && item.targetClassId === classId,
   );
 
   const availableProperties = useMemo(
@@ -98,6 +102,8 @@ function RelationshipDialog({
     if (!mapping) return;
     updateMappingProperty(mapping.id, propertyId);
   };
+
+  const btnBase = "rounded px-3 py-1.5 text-sm transition-colors";
 
   return (
     <div className="w-[min(92vw,520px)] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
@@ -220,22 +226,35 @@ function RelationshipDialog({
         </div>
       </div>
 
-      <div className="flex justify-between border-t border-gray-200 px-4 py-3 dark:border-gray-800">
+      <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3 dark:border-gray-800">
         <button
           type="button"
           onClick={() => handlePropertySelect(undefined)}
           disabled={!mapping?.targetPropertyId}
-          className="rounded px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400 dark:text-gray-300 dark:hover:bg-gray-800"
+          className={`${btnBase} text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400 dark:text-gray-300 dark:hover:bg-gray-800`}
         >
           Clear
         </button>
-        <button
-          type="button"
-          onClick={closeDialog}
-          className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-500"
-        >
-          Done
-        </button>
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              destroyRelationship(mapping);
+              closeDialog();
+            }}
+            className={`${btnBase} bg-red-500 text-white hover:bg-red-700`}
+          >
+            Break Link
+          </button>
+          <button
+            type="button"
+            onClick={closeDialog}
+            className={`${btnBase} bg-blue-500 text-white hover:bg-blue-700`}
+          >
+            Done
+          </button>
+        </div>
       </div>
     </div>
   );

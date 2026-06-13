@@ -26,6 +26,7 @@ import CustomEdge from "./Relation/CustomEdge";
 import { EdgeEditProvider } from "./Relation/EdgeEditContext";
 import RelationshipDialog from "./Relation/RelationshipDialog";
 import DragAndDropZone from "../CsvImportDialog/DragAndDropZone";
+import type { Mapping } from "../../types";
 
 const nodeTypes: NodeTypes = {
   ontologyClass: OntologyClassNode,
@@ -37,7 +38,7 @@ const edgeTypes = {
 };
 
 export default function OntologyCanvas() {
-  const { setFocusedColumnId, colorMode } = useAppContext();
+  const { setFocusedColumnId, colorMode, mappings, removeMapping } = useAppContext();
 
   const [showOntologyAddObjectDialog, setShowOntologyAddObjectDialog] =
     useState(false);
@@ -109,18 +110,19 @@ export default function OntologyCanvas() {
 
   const onConnect: OnConnect = useCallback(
     (params) => {
-      setFlowEdges((eds) => addEdge({ ...params, type: "custom" }, eds));
-
       const sourceId = params.source?.replace("column-", "") || "";
       const targetId = params.target?.replace("class-", "") || "";
+      if (!sourceId || !targetId) return;
 
-      if (sourceId && targetId) {
-        addMapping({
-          id: crypto.randomUUID(),
-          sourceColumnId: sourceId,
-          targetClassId: targetId,
-        });
-      }
+      const mappingId = crypto.randomUUID();
+      setFlowEdges((eds) =>
+        addEdge({ ...params, id: mappingId, type: "custom" }, eds),
+      );
+      addMapping({
+        id: mappingId,
+        sourceColumnId: sourceId,
+        targetClassId: targetId,
+      });
     },
     [setFlowEdges, addMapping],
   );
@@ -140,13 +142,34 @@ export default function OntologyCanvas() {
     setShowRelationshipDialog(false);
     setSelectedEdgeData(null);
   };
+
   const edges = useMemo(
     () =>
-      flowEdges.map((edge) =>
-        edge.type === "custom" ? edge : { ...edge, type: "custom" },
-      ),
-    [flowEdges],
+      flowEdges.map((edge) => {
+        const mapping = mappings.find((m) => m.id === edge.id);
+        const hasProperty = !!mapping?.targetPropertyId;
+
+        return {
+          ...edge,
+          type: "custom",
+          animated: !hasProperty,
+          data: {
+            ...edge.data,
+            label: hasProperty
+              ? (mapping?.targetPropertyId ?? "linked")
+              : undefined,
+          },
+        };
+      }),
+    [flowEdges, mappings],
   );
+
+  const destroyRelationship = (mapping: Mapping | undefined) => {
+    if (!mapping) return;
+    setFlowEdges((eds) => eds.filter((edge) => edge.id !== mapping.id));
+    removeMapping(mapping.id);
+  };
+
   // -----------------------------------------------------------------------------
 
   // ? Flow UI Controls
@@ -192,9 +215,16 @@ export default function OntologyCanvas() {
           edgeTypes={edgeTypes}
           defaultEdgeOptions={{
             type: "custom",
+          }}
+          //? macht nur schwierigkeiten
+          /*
+          defaultEdgeOptions={{
+            type: "custom",
             animated: true,
+            label: "shjd",
             style: { stroke: "#FFA500" },
           }}
+            */
           onEdgeClick={(_, edge) => handleEdgeClick(edge.id)}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
@@ -328,7 +358,9 @@ export default function OntologyCanvas() {
           )}
 
           {(!hasContent || isDraggingOver) && (
-            <DragAndDropZone showDragAndDropZone={!hasContent || isDraggingOver} />
+            <DragAndDropZone
+              showDragAndDropZone={!hasContent || isDraggingOver}
+            />
           )}
 
           {hasContent && (
@@ -354,6 +386,29 @@ export default function OntologyCanvas() {
             </Panel>
           )}
         </ReactFlow>
+        {
+          // ? For debugging properties of edges
+        }
+        {/*
+        <div>
+          {mappings && mappings.length > 0 && (
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm px-4 py-2 rounded border border-gray-200 shadow-sm dark:bg-gray-800/90 dark:border-gray-700">
+              {mappings.map((mapping) => (
+                <h3
+                  key={mapping.id}
+                  className="text-sm text-gray-700 dark:text-gray-300"
+                >
+                  {mapping.targetPropertyId && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      ({mapping.targetPropertyId})
+                    </span>
+                  )}
+                </h3>
+              ))}
+            </div>
+          )}
+        </div>
+        */}
       </EdgeEditProvider>
       {showOntologyAddObjectDialog && (
         <div className="absolute top-4 right-4">
@@ -368,6 +423,7 @@ export default function OntologyCanvas() {
           <RelationshipDialog
             closeDialog={handleCloseDialog}
             selectedEdgeData={selectedEdgeData}
+            destroyRelationship={destroyRelationship}
           />
         </div>
       )}

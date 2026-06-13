@@ -6,7 +6,7 @@ import {
 } from "@xyflow/react";
 import { useEdgeEdit } from "./EdgeEditContext";
 
-const magicNumberStrokeWidth = 4;
+const magicNumberStrokeWidth = 2.5;
 
 function CustomEdge({
   id,
@@ -16,10 +16,17 @@ function CustomEdge({
   targetY,
   sourcePosition,
   targetPosition,
-  style,
   selected,
+  data,
 }: EdgeProps) {
   const onEdit = useEdgeEdit();
+
+  //get the correct label for the edge, if there is a propertyLabel in the data, use it, otherwise return null
+  const label = (() => {
+    const raw = data?.label;
+    if (!raw) return null;
+    return raw.toString().split("#").pop() || raw.toString();
+  })();
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -34,11 +41,29 @@ function CustomEdge({
     <>
       <BaseEdge
         id={id}
+        type="custom"
         path={edgePath}
-        style={{ ...style, strokeWidth: magicNumberStrokeWidth }}
+        style={{
+          stroke: "#FFA500",
+          strokeWidth: magicNumberStrokeWidth,
+        }}
         interactionWidth={20}
       />
       <EdgeLabelRenderer>
+        {label && (
+          <div
+            className="nodrag nopan"
+            style={{
+              position: "absolute",
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY - 26}px)`,
+              pointerEvents: "none",
+            }}
+          >
+            <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-900 text-xs border border-orange-300 shadow-sm dark:bg-orange-900 dark:text-orange-100 dark:border-orange-700">
+              <i>[{label}]</i>
+            </span>
+          </div>
+        )}
         <div
           className={`edge-label nodrag nopan ${selected ? "selected" : ""}`}
           style={{

@@ -10,7 +10,9 @@ export function EdgeEditProvider({
   children: ReactNode;
 }) {
   return (
-    <EdgeEditContext.Provider value={onEdit}>{children}</EdgeEditContext.Provider>
+    <EdgeEditContext.Provider value={onEdit}>
+      {children}
+    </EdgeEditContext.Provider>
   );
 }
 
