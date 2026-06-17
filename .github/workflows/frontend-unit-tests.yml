@@ -1,4 +1,4 @@
-name: Test - Vitest | Unit Tests
+name: Test - Vitest | Frontend Unit Tests
 
 on:
   push:
@@ -7,7 +7,11 @@ on:
 
 jobs:
   unit:
+
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./web-view
     steps:
       - uses: actions/checkout@v4
 
