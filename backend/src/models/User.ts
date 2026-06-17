@@ -1,16 +1,31 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, model } from "mongoose";
+import crypto from "bcryptjs";
+
+export enum Gender {
+  MALE = "Male",
+  FEMALE = "Female",
+  DIVERS = "Divers",
+  NO_ANSWER = "Prefer not to say",
+}
 
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
   name: string;
   password: string;
-  role: "a" | "u";
+  gender: Gender;
+  isAdmin: boolean;
   apiKey?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const UserSchema = new Schema<IUser>(
+export interface IUserMethods {
+  isCorrectPassword(pass: string): Promise<Boolean>;
+}
+
+type userModel = mongoose.Model<IUser, {}, IUserMethods>;
+
+const userSchema = new Schema<IUser>(
   {
     name: {
       type: String,
@@ -24,10 +39,14 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: true,
     },
-    role: {
+    gender: {
       type: String,
-      enum: ["a", "u"],
-      default: "u",
+      enum: Object.values(Gender),
+      default: Gender.NO_ANSWER,
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
     },
     apiKey: {
       type: String,
@@ -36,7 +55,24 @@ const UserSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-export const User = mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
+userSchema.pre("save", async function () {
+  if (this.isModified("password")) {
+    const hashedPassword = await crypto.hash(this.password, 10);
+    this.password = hashedPassword;
+  }
+});
+
+userSchema.method(
+  "isCorrectPassword",
+  async function (password: string): Promise<Boolean> {
+    if (this.isModified()) {
+      throw new Error("Password is not correct");
+    }
+    return await crypto.compare(password, this.password);
+  },
+);
+
+export const User = model<IUser, userModel>("User", userSchema);
