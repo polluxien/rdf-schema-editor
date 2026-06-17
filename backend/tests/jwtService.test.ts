@@ -1,31 +1,31 @@
 import { verify, JsonWebTokenError, JwtPayload } from "jsonwebtoken";
 import { login } from "@/services/loginAuthService";
-import { verifyPasswordAndCreateJWT } from "@/services/JWTServices";
+import { verifyPasswordAndCreateJWT, verifyJWT } from "@/services/JWTServices";
 
-//isolated mock test
+// isolated mock test
 jest.mock("@/services/loginAuthService");
 
 const mockedLogin = login as jest.MockedFunction<typeof login>;
 
-// So sieht ein eingeloggter User aus (wie in deinem User.create-Beispiel).
+// Represents a logged-in user (matching the User.create example).
 const DUMMY_USER = { id: "507f1f77bcf86cd799439011", isAdmin: false };
 
 describe("verifyPasswordAndCreateJWT", () => {
   beforeAll(() => {
-    // verifyPasswordAndCreateJWT / verifyJWT lesen die Env zur Laufzeit aus,
-    // daher reicht es, sie hier zu setzen.
+    // verifyPasswordAndCreateJWT / verifyJWT read the env at runtime,
+    // so setting it here is enough.
     process.env.JWT_SECRET = "test-secret";
-    process.env.JWT_TTL = "300"; // 5 Minuten
+    process.env.JWT_TTL = "300"; // 5 minutes
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Env-Werte vor jedem Test sicher zurücksetzen (einzelne Tests verändern sie).
+    // Reset env values before each test (some tests mutate them).
     process.env.JWT_SECRET = "test-secret";
     process.env.JWT_TTL = "300";
   });
 
-  test("erzeugt einen gültigen JWT bei korrekten Credentials", async () => {
+  test("creates a valid JWT for correct credentials", async () => {
     mockedLogin.mockResolvedValue(DUMMY_USER as any);
 
     const token = await verifyPasswordAndCreateJWT("Harry", "password");
@@ -33,14 +33,14 @@ describe("verifyPasswordAndCreateJWT", () => {
     expect(token).toBeDefined();
     expect(typeof token).toBe("string");
 
-    // Token muss sich mit dem Secret verifizieren lassen und das richtige Payload tragen.
+    // Token must verify with the secret and carry the correct payload.
     const payload = verify(token!, process.env.JWT_SECRET!) as JwtPayload;
     expect(payload.sub).toBe(DUMMY_USER.id);
     expect(payload.isAdmin).toBe(false);
     expect(payload.exp).toBeGreaterThan(Math.floor(Date.now() / 1000));
   });
 
-  test("reicht name und password korrekt an login durch", async () => {
+  test("passes name and password through to login correctly", async () => {
     mockedLogin.mockResolvedValue(DUMMY_USER as any);
 
     await verifyPasswordAndCreateJWT("Harry", "password");
@@ -49,35 +49,35 @@ describe("verifyPasswordAndCreateJWT", () => {
     expect(mockedLogin).toHaveBeenCalledWith("Harry", "password");
   });
 
-  test("gibt undefined zurück, wenn login fehlschlägt (falsche Credentials)", async () => {
+  test("returns undefined when login fails (wrong credentials)", async () => {
     mockedLogin.mockResolvedValue(undefined as any);
 
-    const token = await verifyPasswordAndCreateJWT("Megan", "falsch");
+    const token = await verifyPasswordAndCreateJWT("Megan", "wrong");
 
     expect(token).toBeUndefined();
   });
 
-  test("wirft, wenn JWT_SECRET nicht gesetzt ist", async () => {
+  test("throws when JWT_SECRET is not set", async () => {
     delete process.env.JWT_SECRET;
     mockedLogin.mockResolvedValue(DUMMY_USER as any);
 
     await expect(
       verifyPasswordAndCreateJWT("Harry", "password"),
-    ).rejects.toThrow("verifyJWT is not defined");
+    ).rejects.toThrow("verifyJWT or jwtTtl is not defined");
   });
 
-  test("wirft, wenn JWT_TTL nicht gesetzt ist", async () => {
+  test("throws when JWT_TTL is not set", async () => {
     delete process.env.JWT_TTL;
     mockedLogin.mockResolvedValue(DUMMY_USER as any);
 
     await expect(
       verifyPasswordAndCreateJWT("Harry", "password"),
-    ).rejects.toThrow("verifyJWT is not defined");
+    ).rejects.toThrow("verifyJWT or jwtTtl is not defined");
   });
 });
 
 describe("verifyJWT", () => {
-  test("dekodiert einen gültigen Token (Round-Trip)", async () => {
+  test("decodes a valid token (round-trip)", async () => {
     mockedLogin.mockResolvedValue(DUMMY_USER as any);
     const token = await verifyPasswordAndCreateJWT("Harry", "password");
 
@@ -86,33 +86,33 @@ describe("verifyJWT", () => {
     expect(result.id).toBe(DUMMY_USER.id);
     expect(result.exp).toBeGreaterThan(Math.floor(Date.now() / 1000));
 
-    // ACHTUNG / BUG: signiert wird "isAdmin", gelesen wird "payload.role".
-    // role ist deshalb aktuell IMMER undefined. Dieser Test dokumentiert
-    // das Ist-Verhalten. Sobald du den Service fixt (z. B. role: payload.isAdmin),
-    // muss die nächste Zeile auf toBe(false) geändert werden.
+    // WARNING / BUG: "isAdmin" is signed, but "payload.role" is read.
+    // As a result, role is currently ALWAYS undefined. This test documents
+    // the current behavior. Once you fix the service (e.g. role: payload.isAdmin),
+    // the next line must be changed to toBe(false).
     expect(result.role).toBeUndefined();
   });
 
-  test("wirft JsonWebTokenError bei ungültigem Token", () => {
-    expect(() => verifyJWT("kein.gueltiger.token")).toThrow(JsonWebTokenError);
+  test("throws JsonWebTokenError for an invalid token", () => {
+    expect(() => verifyJWT("not.a.valid.token")).toThrow(JsonWebTokenError);
   });
 
-  test("wirft JsonWebTokenError bei undefined", () => {
+  test("throws JsonWebTokenError for undefined", () => {
     expect(() => verifyJWT(undefined)).toThrow(JsonWebTokenError);
   });
 
-  test("wirft, wenn der Token mit falschem Secret signiert wurde", async () => {
+  test("throws when the token was signed with a different secret", async () => {
     mockedLogin.mockResolvedValue(DUMMY_USER as any);
     const token = await verifyPasswordAndCreateJWT("Harry", "password");
 
-    // Secret nach dem Signieren ändern -> Verifikation muss fehlschlagen.
-    process.env.JWT_SECRET = "anderes-secret";
+    // Change the secret after signing -> verification must fail.
+    process.env.JWT_SECRET = "different-secret";
 
     expect(() => verifyJWT(token)).toThrow(JsonWebTokenError);
   });
 
-  test("wirft bei abgelaufenem Token", async () => {
-    // TTL negativ -> Token ist sofort abgelaufen.
+  test("throws for an expired token", async () => {
+    // Negative TTL -> token is expired immediately.
     process.env.JWT_TTL = "-10";
     mockedLogin.mockResolvedValue(DUMMY_USER as any);
     const token = await verifyPasswordAndCreateJWT("Harry", "password");
@@ -120,9 +120,11 @@ describe("verifyJWT", () => {
     expect(() => verifyJWT(token)).toThrow(JsonWebTokenError);
   });
 
-  test("wirft, wenn JWT_SECRET nicht gesetzt ist", () => {
+  test("throws when JWT_SECRET is not set", () => {
     delete process.env.JWT_SECRET;
 
-    expect(() => verifyJWT("smthhh")).toThrow("verifyJWT is not defined");
+    expect(() => verifyJWT("smthhh")).toThrow(
+      "jwtSecret is not defined",
+    );
   });
 });

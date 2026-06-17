@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">69.56% </span>
+                <span class="strong">95.65% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>16/23</span>
+                <span class='fraction'>22/23</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>6/8</span>
+                <span class='fraction'>8/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">72.72% </span>
+                <span class="strong">95.45% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>16/22</span>
+                <span class='fraction'>21/22</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -145,18 +145,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import cookieParser from "cookie-parser";
@@ -175,7 +175,7 @@ export async function verifyPasswordAndCreateJWT(
   const jwtSecret = process.env.JWT_SECRET;
   const jwtTtl = process.env.JWT_TTL;
   if (!jwtSecret || !jwtTtl)
-    throw new Error("jwtSecret oder/und jwtTtl nicht gesetzt");
+    throw new Error("verifyJWT or jwtTtl is not defined");
 &nbsp;
   const user = await login(name, password);
   if (user) {
@@ -192,19 +192,19 @@ export async function verifyPasswordAndCreateJWT(
   return undefined;
 }
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >verifyJWT(</span>jwtString: string | undefined): LoginType {
-  const jwtSecret = <span class="cstat-no" title="statement not covered" >process.env.JWT_SECRET;</span>
-<span class="cstat-no" title="statement not covered" >  if (!jwtSecret) <span class="cstat-no" title="statement not covered" >throw new Error("jwtSecret oder/und jwtTtl nicht gesetzt");</span></span>
+export function verifyJWT(jwtString: string | undefined): LoginType {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) throw new JsonWebTokenError("jwtSecret is not defined");
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  try {</span>
-    const payload = <span class="cstat-no" title="statement not covered" >verify(jwtString!, jwtSecret) as JwtPayload;</span>
+  try {
+    const payload = verify(jwtString!, jwtSecret) as JwtPayload;
 <span class="cstat-no" title="statement not covered" >    return {</span>
       id: payload.sub as string,
       isAdmin: payload.isAdmin,
       exp: payload.exp!,
     };
   } catch {
-<span class="cstat-no" title="statement not covered" >    throw new JsonWebTokenError("Jason Web Token falsch");</span>
+    throw new JsonWebTokenError("Wrong Jason Web Token");
   }
 }
 &nbsp;</pre></td></tr></table></pre>
@@ -214,7 +214,7 @@ export function <span class="fstat-no" title="function not covered" >verifyJWT(<
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-17T17:35:43.615Z
+                at 2026-06-17T20:13:54.270Z
             </div>
         <script src="../prettify.js"></script>
         <script>

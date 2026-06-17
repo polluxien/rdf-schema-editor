@@ -5,6 +5,8 @@ export async function login(
   name: string,
   password: string,
 ): Promise<{ id: string; isAdmin: boolean } | false> {
+ // * hier noch option name | email 
+
   const user = await User.findOne({ name: name }).exec();
   if (!user) return false;
   const isMatch = await user.isCorrectPassword(password);

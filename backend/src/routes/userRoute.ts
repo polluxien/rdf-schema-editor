@@ -1,45 +1,116 @@
 import express from "express";
+import { body, param, validationResult } from "express-validator";
+import {
+  requiresAuthentication,
+} from "./authentification";
+import {
+  createUser,
+  deleteUser,
+  getAllUsers,
+  getCurrentUser,
+  updateUser,
+} from "@/services/userServices";
 
 export const userRouter = express.Router();
 
-userRouter.post("/", async (req, res) => {
+//? create user (registration — public)
+userRouter.post(
+  "/",
+  body("name").isString().isLength({ min: 3, max: 100 }),
+  body("email").isEmail().normalizeEmail(),
+  body("password").isString().isLength({ min: 3, max: 100 }),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    try {
+      const user = await createUser(req.body);
+      return res.status(201).json(user);
+    } catch (error) {
+      console.error("Create user error:", error);
+      next(error);
+    }
+  },
+);
+
+//? get all users (admin only)
+userRouter.get("/", requiresAuthentication, async (req, res, next) => {
+  if (!req.isAdmin) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
   try {
-    const { name, password } = await req.body;
-
-    if (!name || !password) {
-      return res.status(400).json({ error: "Name and password are required" });
-    }
-
-    if (!user) {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      user = await User.create({
-        name,
-        password: hashedPassword,
-        role: "u",
-      });
-    } else {
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      if (!isValidPassword) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
-    }
-
-    const token = await createToken({
-      id: user._id.toString(),
-      role: user.role,
-    });
-
-    await setAuthCookie(token);
-
-    const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
-
-    return res.json({
-      id: user._id.toString(),
-      role: user.role,
-      exp,
-    });
-  } catch (error) {
-    console.error("Login error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    const users = await getAllUsers();
+    return res.status(200).json(users);
+  } catch (err) {
+    next(err);
   }
 });
+
+//? get single user by id
+userRouter.get(
+  "/:id",
+  requiresAuthentication,
+  param("id").isMongoId(),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    try {
+      const user = await getCurrentUser(req.params.id as string);
+      return res.status(200).json(user);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+//? update user
+userRouter.put(
+  "/:id",
+  requiresAuthentication,
+  param("id").isMongoId(),
+  body("name").optional().isString().isLength({ min: 3, max: 100 }),
+  body("email").optional().isEmail().normalizeEmail(),
+  body("password").optional().isString().isLength({ min: 3, max: 100 }),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    // only the user themselves or an admin may update
+    if (req.userID !== req.params.id && !req.isAdmin) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    try {
+      const user = await updateUser(req.params.id as string, req.body);
+      return res.status(200).json(user);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+//? delete user
+userRouter.delete(
+  "/:id",
+  requiresAuthentication,
+  param("id").isMongoId(),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    // only the user themselves or an admin may delete
+    if (req.userID !== req.params.id && !req.isAdmin) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    try {
+      await deleteUser(req.params.id as string);
+      return res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  },
+);

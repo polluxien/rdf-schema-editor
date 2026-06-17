@@ -6,6 +6,9 @@ import { getCurrentUser } from "@/services/userServices";
 export const workspaceRouter = express.Router();
 
 //get an existing Workspace
+
+// ! under Construction
+/*
 workspaceRouter.get("/", async (req, res) => {
   try {
     const user = await getCurrentUser();

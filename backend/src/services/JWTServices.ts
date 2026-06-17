@@ -14,7 +14,7 @@ export async function verifyPasswordAndCreateJWT(
   const jwtSecret = process.env.JWT_SECRET;
   const jwtTtl = process.env.JWT_TTL;
   if (!jwtSecret || !jwtTtl)
-    throw new Error("jwtSecret oder/und jwtTtl nicht gesetzt");
+    throw new Error("verifyJWT or jwtTtl is not defined");
 
   const user = await login(name, password);
   if (user) {
@@ -33,7 +33,7 @@ export async function verifyPasswordAndCreateJWT(
 
 export function verifyJWT(jwtString: string | undefined): LoginType {
   const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret) throw new Error("jwtSecret oder/und jwtTtl nicht gesetzt");
+  if (!jwtSecret) throw new JsonWebTokenError("jwtSecret is not defined");
 
   try {
     const payload = verify(jwtString!, jwtSecret) as JwtPayload;
@@ -43,6 +43,6 @@ export function verifyJWT(jwtString: string | undefined): LoginType {
       exp: payload.exp!,
     };
   } catch {
-    throw new JsonWebTokenError("Jason Web Token falsch");
+    throw new JsonWebTokenError("Wrong Jason Web Token");
   }
 }

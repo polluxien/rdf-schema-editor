@@ -19,7 +19,7 @@ export async function postLogin(
   if (USE_MOCK_DATA && !REAL_FETCH) {
     // Return mock data instead of making a real request
     if (name === "max" && password === "123") {
-      return { id: "mock-admin-id", role: "a", exp: 3600 } as LoginType;
+      return { id: "mock-admin-id", isAdmin: true, exp: 3600 } as LoginType;
     }
   }
 
@@ -47,7 +47,9 @@ export async function postLogin(
 }
 
 // Function to get login information, returns false if not logged in
-export async function getLogin(signal?: AbortSignal): Promise<LoginType | false> {
+export async function getLogin(
+  signal?: AbortSignal,
+): Promise<LoginType | false> {
   const url = `${API_BASE_URL}/api/login`;
 
   // ! Mock

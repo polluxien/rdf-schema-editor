@@ -30,8 +30,8 @@ loginRouter.post(
       res.cookie("access_token", jwttokenString, {
         httpOnly: true,
         expires: new Date(loginResourceBack.exp * 1000),
-        secure: true,
-        sameSite: "none",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       });
       return res.status(200).json(loginResourceBack);
     } catch (error) {

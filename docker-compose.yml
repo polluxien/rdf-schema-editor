@@ -1,9 +1,9 @@
 services:
   frontend:
-    image: rse-frontend:latest
+    image: rse-frontend
     build:
-      context: ./web-view
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: web-view/Dockerfile
     environment:
       NODE_ENV: production
     ports:
@@ -12,10 +12,17 @@ services:
       - backend
 
   backend:
-    image: rse-backend:latest
+    image: rse-backend
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGODB_URI: mongodb://mongodb:27017/rse
+      CORS_ORIGIN: http://localhost:3000
+      JWT_SECRET: schlüssel
+      JWT_TTL: 300
     ports:
       - "4000:4000"
     depends_on:

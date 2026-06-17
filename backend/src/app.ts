@@ -11,7 +11,7 @@ const app = express();
 configureCORS(app);
 
 // Middleware:
-app.use("*", express.json()); 
+app.use(express.json());
 app.use(cookieParser());
 
 // created Routes:

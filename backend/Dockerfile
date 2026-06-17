@@ -1,10 +1,11 @@
 FROM node:lts-alpine
-WORKDIR /app
+WORKDIR /app/backend
 
-COPY package*.json ./
+COPY backend/package*.json ./
 RUN npm ci
 
-COPY . .
+COPY backend/ ./
+COPY sharedTypes/ /app/sharedTypes/
 
 EXPOSE 4000
 CMD ["npm", "start"]

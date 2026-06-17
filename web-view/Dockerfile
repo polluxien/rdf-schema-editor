@@ -1,11 +1,13 @@
 FROM node:lts-alpine
-WORKDIR /app
+WORKDIR /app/frontend
 
-COPY package*.json ./
-RUN npm ci                 
+COPY web-view/package*.json ./
+RUN npm ci
 
-COPY . .
-RUN npm run build          
+COPY web-view/ ./
+COPY sharedTypes/ /app/sharedTypes/
+
+RUN npm run build
 
 RUN npm install -g serve
 EXPOSE 3000
