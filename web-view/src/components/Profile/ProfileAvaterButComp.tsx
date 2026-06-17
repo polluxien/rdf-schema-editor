@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { LoginDialog } from "./LoginDialogCom";
-import { deleteLogin } from "../../backend/api";
-import { useLoginContext } from "../../backend/LoginInfo";
+import { deleteLogin } from "../../api/loginAPI";
+import { useLoginContext } from "../../api/LoginInfo";
 import { ApiKeySettings } from "./ApiKeySettings";
 
 function ProfileAvatarButton() {

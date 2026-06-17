@@ -4,7 +4,7 @@ import {
   listAvailableOwlFiles,
   downloadOwlFile,
   type OwlApiConfig,
-} from "../../backend/owlApi";
+} from "../../api/owlApi";
 import { getStoredApiKey } from "../../hooks/useApiKey";
 
 const BIOPORTAL_API_URL = "https://data.biodivportal.gfbio.org";

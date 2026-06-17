@@ -1,9 +1,9 @@
 import React from "react";
-import type { LoginResource } from "../types/login";
+import type { LoginType } from "../../../sharedTypes/loginTypes"
 
 interface LoginContextType {
-  loginInfo: LoginResource | false | undefined;
-  setLoginInfo: (loginInfo: LoginResource | false) => void;
+  loginInfo: LoginType | false | undefined;
+  setLoginInfo: (loginInfo: LoginType | false) => void;
 }
 
 // export only for provider

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { postLogin } from "../../backend/api";
-import { useLoginContext } from "../../backend/LoginInfo";
+import { postLogin } from "../../api/loginAPI";
+import { useLoginContext } from "../../api/LoginInfo";
 import { X } from "lucide-react";
 import LoadingComponent from "../UI-NoPurpose/LoadingComp";
 

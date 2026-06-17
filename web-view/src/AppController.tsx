@@ -6,14 +6,14 @@ import ErrorFallback from "./components/Fallback/ErrorFallback";
 import { WorkspaceProvider } from "./components/Workspace/WorkspaceContext";
 import WorkspaceBar from "./components/Workspace/WorkspaceBar";
 import { useEffect, useState } from "react";
-import type { LoginResource } from "./types/login";
-import { getLogin } from "./backend/api";
-import { LoginContext } from "./backend/LoginInfo";
+import { getLogin } from "./api/loginAPI";
+import { LoginContext } from "./api/LoginInfo";
 import LoadingComponent from "./components/UI-NoPurpose/LoadingComp";
 import { FileImportProvider } from "./components/FileImport/FileImportContext";
+import type { LoginType } from "../../sharedTypes/loginTypes";
 
 function AppController() {
-  const [loginInfo, setLoginInfo] = useState<LoginResource | false | undefined>(
+  const [loginInfo, setLoginInfo] = useState<LoginType | false | undefined>(
     undefined,
   );
 

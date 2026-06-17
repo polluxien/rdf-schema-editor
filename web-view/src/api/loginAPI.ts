@@ -1,4 +1,4 @@
-import type { LoginResource } from "../types/login";
+import type { LoginType } from "../../../sharedTypes/loginTypes";
 import { fetchWithErrorHandling } from "./fetchWithErrorHandling";
 
 // Mock data and real fetch configuration
@@ -12,14 +12,14 @@ const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
 export async function postLogin(
   name: string,
   password: string,
-): Promise<LoginResource> {
+): Promise<LoginType> {
   const url = `${API_BASE_URL}/api/login`;
 
   // ! Mock
   if (USE_MOCK_DATA && !REAL_FETCH) {
     // Return mock data instead of making a real request
     if (name === "max" && password === "123") {
-      return { id: "mock-admin-id", role: "a", exp: 3600 } as LoginResource;
+      return { id: "mock-admin-id", role: "a", exp: 3600 } as LoginType;
     }
   }
 
@@ -35,7 +35,7 @@ export async function postLogin(
   });
   console.log(`Response status: ${response.status}`);
   if (response.ok) {
-    const loginInfo: LoginResource = await response.json();
+    const loginInfo: LoginType = await response.json();
     return loginInfo;
   }
   if (response.status === 401) {
@@ -47,7 +47,7 @@ export async function postLogin(
 }
 
 // Function to get login information, returns false if not logged in
-export async function getLogin(signal?: AbortSignal): Promise<LoginResource | false> {
+export async function getLogin(signal?: AbortSignal): Promise<LoginType | false> {
   const url = `${API_BASE_URL}/api/login`;
 
   // ! Mock
@@ -63,7 +63,7 @@ export async function getLogin(signal?: AbortSignal): Promise<LoginResource | fa
     signal,
   });
   if (response.ok) {
-    const loginInfo: LoginResource | false = await response.json();
+    const loginInfo: LoginType | false = await response.json();
     return loginInfo;
   }
   if (response.status === 401) {
