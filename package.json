@@ -1,0 +1,13 @@
+{
+  "name": "rdf-schema-editor",
+  "version": "1.0.0",
+  "description": "A simple RDF schema editor for Botanischer Garten und Botanisches Museum Berlin-Dahlem",
+  "author": "Bennet Worrmann, Matheo ...",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && npm install && npm run start",
+    "start:frontend": "cd web-view && npm install && npm run dev"
+  },
+  "license": "MIT"
+}
