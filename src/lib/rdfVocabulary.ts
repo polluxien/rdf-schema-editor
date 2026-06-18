@@ -14,17 +14,14 @@ export const NS = {
 
 /**
  * System / standard properties that are always offered to the user,
- * regardless of which ontology (if any) is currently loaded. This mirrors
- * Karma's pre-seeding of standard predicates in OntologyCache.loadProperties().
- *
- * These are real RDF predicates and are emitted verbatim on export.
+ * regardless of which ontology (if any) is currently loaded.
  */
 export const STANDARD_PROPERTIES: OntologyProperty[] = [
   {
     id: NS.rdf + "type",
     uri: NS.rdf + "type",
     type: "object",
-    label: "rdf:type",
+    label: "uri",
   },
   {
     id: NS.rdf + "value",
@@ -36,7 +33,7 @@ export const STANDARD_PROPERTIES: OntologyProperty[] = [
     id: NS.rdfs + "label",
     uri: NS.rdfs + "label",
     type: "annotation",
-    label: "rdfs:label",
+    label: "label",
   },
   {
     id: NS.rdfs + "comment",
