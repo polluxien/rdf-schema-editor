@@ -3,6 +3,7 @@ import type { Edge } from "@xyflow/react";
 import { Database, Link2, Search, Tags, X } from "lucide-react";
 import { useAppContext } from "../../../hooks/useAppContext";
 import type { Mapping, OntologyClass, OntologyProperty } from "../../../types";
+import { STANDARD_PROPERTIES } from "../../../lib/rdfVocabulary";
 
 interface RelationshipDialogProps {
   selectedEdgeData: Edge;
@@ -18,6 +19,12 @@ function propertyTypeLabel(type: OntologyProperty["type"]): string {
   if (type === "datatype") return "Datatype";
   if (type === "annotation") return "Annotation";
   return "Object";
+}
+
+function addStandardProperties(properties: Map<string, OntologyProperty>){
+  for (const p of STANDARD_PROPERTIES) {
+    if (!properties.has(p.id)) properties.set(p.id, p);
+  }
 }
 
 function getAvailableProperties(
@@ -42,9 +49,12 @@ function getAvailableProperties(
       const parent = classByUri.get(parentUri);
       if (parent) collect(parent);
     }
+
   };
 
   collect(ontologyClass);
+  addStandardProperties(properties);
+
   return [...properties.values()].sort((a, b) =>
     (a.label ?? shortName(a.uri)).localeCompare(b.label ?? shortName(b.uri)),
   );
