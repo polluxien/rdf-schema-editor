@@ -27,6 +27,7 @@ import { EdgeEditProvider } from "./Relation/EdgeEditContext";
 import RelationshipDialog from "./Relation/RelationshipDialog";
 import DragAndDropZone from "../CsvImportDialog/DragAndDropZone";
 import type { Mapping } from "../../types";
+import { STANDARD_PROPERTIES } from "../../lib/rdfVocabulary";
 
 const nodeTypes: NodeTypes = {
   ontologyClass: OntologyClassNode,
@@ -115,14 +116,23 @@ export default function OntologyCanvas() {
       if (!sourceId || !targetId) return;
 
       const mappingId = crypto.randomUUID();
-      setFlowEdges((eds) =>
-        addEdge({ ...params, id: mappingId, type: "custom" }, eds),
-      );
+      const newEdge: Edge = {
+        ...params,
+        id: mappingId,
+        type: "custom",
+        source: params.source!,
+        target: params.target!,
+      };
+
+      setFlowEdges((eds) => addEdge(newEdge, eds));
+      setSelectedEdgeData(newEdge);
       addMapping({
         id: mappingId,
         sourceColumnId: sourceId,
         targetClassId: targetId,
       });
+
+      setShowRelationshipDialog(true);
     },
     [setFlowEdges, addMapping],
   );
@@ -149,19 +159,29 @@ export default function OntologyCanvas() {
         const mapping = mappings.find((m) => m.id === edge.id);
         const hasProperty = !!mapping?.targetPropertyId;
 
+        let propertyLabel: string | undefined;
+        if (hasProperty) {
+          const propertyId = mapping?.targetPropertyId;
+          const property =
+            ontology?.properties.find((p) => p.id === propertyId) ??
+            STANDARD_PROPERTIES.find((p) => p.id === propertyId) ??
+            ontology?.classes
+              .flatMap((c) => c.properties)
+              .find((p) => p.id === propertyId);
+          propertyLabel = property?.label ?? property?.uri;
+        }
+
         return {
           ...edge,
           type: "custom",
           animated: !hasProperty,
           data: {
             ...edge.data,
-            label: hasProperty
-              ? (mapping?.targetPropertyId ?? "linked")
-              : undefined,
+            label: propertyLabel,
           },
         };
       }),
-    [flowEdges, mappings],
+    [flowEdges, mappings, ontology],
   );
 
   const destroyRelationship = (mapping: Mapping | undefined) => {
