@@ -1,12 +1,14 @@
 import { useRef, useState } from "react";
 import { useFileImport } from "../FileImport/FileImportContext";
 import OwlImportDialog from "../OwlImportDialog";
+import RmlExportDialog from "../RmlExportDialog";
 
 export default function WorkspaceImportExport() {
   const { importFiles, importOntologyFromContent } = useFileImport();
   const csvInputRef = useRef<HTMLInputElement>(null);
   const owlInputRef = useRef<HTMLInputElement>(null);
   const [owlDialogOpen, setOwlDialogOpen] = useState(false);
+  const [rmlDialogOpen, setRmlDialogOpen] = useState(false);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -57,6 +59,9 @@ export default function WorkspaceImportExport() {
       <button type="button" onClick={handleExportTtl} className={actionClass}>
         ttl
       </button>
+      <button type="button" onClick={() => setRmlDialogOpen(true)} className={actionClass}>
+        rml
+      </button>
 
       <input
         ref={csvInputRef}
@@ -80,6 +85,10 @@ export default function WorkspaceImportExport() {
         onClose={() => setOwlDialogOpen(false)}
         onImportFromFile={() => owlInputRef.current?.click()}
         onImportFromContent={importOntologyFromContent}
+      />
+      <RmlExportDialog
+        isOpen={rmlDialogOpen}
+        onClose={() => setRmlDialogOpen(false)}
       />
     </div>
   );
