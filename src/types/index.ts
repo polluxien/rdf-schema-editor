@@ -45,9 +45,9 @@ export interface Dataset {
 
 export interface Mapping {
   id: string;
-  sourceColumnId: string;
-  targetClassId: string;
-  targetPropertyId?: string;
+  sourceId: string;
+  targetId: string;
+  propertyId?: string;
 }
 
 export interface AppState {
