@@ -1,0 +1,93 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`toYarrrml — OBOE plant-height example > is stable (golden snapshot) 1`] = `
+"prefixes:
+  grel: http://users.ugent.be/~bjdmeest/function/grel.ttl#
+  builtin: https://github.com/morph-kgc/morph-kgc/function/built-in.ttl#
+  oboe: http://ecoinformatics.org/oboe/oboe.1.2/oboe-core.owl#
+  rdfs: http://www.w3.org/2000/01/rdf-schema#
+
+mappings:
+  ObservationCollection:
+    sources:
+      - ['plant_height_vegetative_raw_germany_20.json~jsonpath', '$[*]']
+    s: http://ecoinformatics.org/oboe/data/$(DatasetID)
+    po:
+      - [a, oboe:ObservationCollection]
+      - [rdfs:label, $(Dataset)]
+      - [oboe:hasMember, http://ecoinformatics.org/oboe/data/$(ObservationID)~iri]
+
+  Observation:
+    sources:
+      - ['plant_height_vegetative_raw_germany_20.json~jsonpath', '$[*]']
+    s: http://ecoinformatics.org/oboe/data/$(ObservationID)
+    po:
+      - [a, oboe:Observation]
+      - [oboe:hasMeasurement, http://ecoinformatics.org/oboe/data/$(ObsDataID)~iri]
+      - [oboe:ofEntity, http://www.catalogueoflife.org/data/taxon/$(TaxonID)~iri]
+
+  Measurement:
+    sources:
+      - ['plant_height_vegetative_raw_germany_20.json~jsonpath', '$[*]']
+    s: http://ecoinformatics.org/oboe/data/$(ObsDataID)
+    po:
+      - [a, oboe:Measurement]
+      - [oboe:ofCharacteristic, $(TraitID)~iri]
+      - predicates: oboe:usesStandard
+        objects:
+          - function: builtin:concat
+            parameters:
+              - [grel:valueParameter1, http://qudt.org/vocab/unit/]
+              - parameter: grel:valueParameter2
+                value:
+                  function: grel:toUpperCase
+                  parameters:
+                    - [grel:valueParameter, $(UnitName)]
+            type: iri
+      - predicates: oboe:hasValue
+        objects:
+          - value: MeasuredValue_$(ObsDataID)
+            type: blank
+
+  MeasuredValue:
+    sources:
+      - ['plant_height_vegetative_raw_germany_20.json~jsonpath', '$[*]']
+    subjects:
+      - value: MeasuredValue_$(ObsDataID)
+        type: blank
+    po:
+      - [a, oboe:MeasuredValue]
+      - [oboe:hasCode, $(StdValue)]
+
+  Characteristic:
+    sources:
+      - ['plant_height_vegetative_raw_germany_20.json~jsonpath', '$[*]']
+    s: $(TraitID)
+    po:
+      - [a, oboe:Characteristic]
+      - [rdfs:label, $(TraitName)]
+
+  Unit:
+    sources:
+      - ['plant_height_vegetative_raw_germany_20.json~jsonpath', '$[*]']
+    subjects:
+      - function: builtin:concat
+        parameters:
+          - [grel:valueParameter1, http://qudt.org/vocab/unit/]
+          - parameter: grel:valueParameter2
+            value:
+              function: grel:toUpperCase
+              parameters:
+                - [grel:valueParameter, $(UnitName)]
+    po:
+      - [a, oboe:Unit]
+
+  Entity:
+    sources:
+      - ['plant_height_vegetative_raw_germany_20.json~jsonpath', '$[*]']
+    s: http://www.catalogueoflife.org/data/taxon/$(TaxonID)
+    po:
+      - [a, oboe:Entity]
+      - [rdfs:label, $(AccSpeciesName)]
+"
+`;

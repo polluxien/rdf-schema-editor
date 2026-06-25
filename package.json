@@ -12,9 +12,11 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@rmlio/yarrrml-parser": "^1.12.2",
     "@xyflow/react": "^12.10.2",
     "fast-xml-parser": "^5.8.0",
     "lucide-react": "^1.14.0",
+    "n3": "^2.1.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-error-boundary": "^6.1.1",
@@ -23,6 +25,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.3.0",
+    "@types/n3": "^1.26.1",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

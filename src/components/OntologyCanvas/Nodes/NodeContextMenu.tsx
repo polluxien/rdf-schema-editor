@@ -2,18 +2,24 @@ interface NodeContextMenuProps {
   menuProps: { x: number; y: number; nodeId: string };
   deleteNode: (id: string) => void;
   jumpToColumnInDataset: (columnId: string) => void;
+  editSubject: (nodeId: string) => void;
 }
 
 function NodeContextMenu({
   menuProps,
   deleteNode,
   jumpToColumnInDataset,
+  editSubject,
 }: NodeContextMenuProps) {
   const { x, y, nodeId } = menuProps;
+  const isClassNode = nodeId.startsWith("class-");
 
   const actionHandler = (action: string) => {
     // Depending on the action, call the appropriate handler function
     switch (action) {
+      case "Edit Subject":
+        editSubject(nodeId);
+        break;
       case "Jump to Column in Dataset":
         jumpToColumnInDataset(nodeId);
         break;
@@ -25,12 +31,18 @@ function NodeContextMenu({
     }
   };
 
+  // Actions depend on the node kind: class nodes define a subject, column nodes
+  // jump to the dataset table.
+  const actions = isClassNode
+    ? ["Edit Subject", "Delete"]
+    : ["Jump to Column in Dataset", "Delete"];
+
   return (
     <div
       className="fixed w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 dark:bg-gray-700 dark:border-gray-600"
       style={{ top: y, left: x }}
     >
-      {["Jump to Column in Dataset", "Delete"].map((action) => (
+      {actions.map((action) => (
         <button
           key={action}
           className="block w-full text-left px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-950 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white"
