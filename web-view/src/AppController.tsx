@@ -1,16 +1,15 @@
-import DatasetTable from "./components/DatasetTable";
-import OntologyCanvas from "./components/OntologyCanvas";
-import { AppProvider } from "./context/AppContext";
+import { Route, Routes, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "react-error-boundary";
 import ErrorFallback from "./components/Fallback/ErrorFallback";
-import { WorkspaceProvider } from "./components/Workspace/WorkspaceContext";
-import WorkspaceBar from "./components/Workspace/WorkspaceBar";
 import { useEffect, useState } from "react";
 import { getLogin } from "./api/loginAPI";
 import { LoginContext } from "./api/LoginInfo";
 import LoadingComponent from "./components/UI-NoPurpose/LoadingComp";
-import { FileImportProvider } from "./components/FileImport/FileImportContext";
 import type { LoginType } from "../../sharedTypes/loginTypes";
+import EditorPage from "./pages/EditorPage";
+import SettingsPage from "./pages/SettingsPage";
+import UserManagementPage from "./pages/admin/UserManagementPage";
+import ProtectedAdminRoute from "./components/routing/ProtectedAdminRoute";
 
 function AppController() {
   const [loginInfo, setLoginInfo] = useState<LoginType | false | undefined>(
@@ -41,29 +40,26 @@ function AppController() {
   }, []);
 
   return (
-    <div>
-      <LoginContext.Provider value={{ loginInfo, setLoginInfo }}>
-        <ErrorBoundary FallbackComponent={ErrorFallback}>
-          <WorkspaceProvider>
-            <AppProvider>
-              <FileImportProvider>
-                <div className="flex flex-col h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-                  {loginInfo === undefined && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-gray-950/80">
-                      <LoadingComponent label="Checking session..." />
-                    </div>
-                  )}
-                  <WorkspaceBar />
-                  <OntologyCanvas />
-                  <DatasetTable />
-                </div>
-              </FileImportProvider>
-            </AppProvider>
-          </WorkspaceProvider>
-        </ErrorBoundary>
-        {loginInfo && <>{/* Just for login users to see*/}</>}
-      </LoginContext.Provider>
-    </div>
+    <LoginContext.Provider value={{ loginInfo, setLoginInfo }}>
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        {loginInfo === undefined && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-gray-950/80">
+            <LoadingComponent label="Checking session..." />
+          </div>
+        )}
+        <Routes>
+          <Route path="/" element={<EditorPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+
+          {/* Admin-only – ProtectedAdminRoute prüft isAdmin, sonst Redirect zu "/" */}
+          <Route element={<ProtectedAdminRoute />}>
+            <Route path="/admin/users" element={<UserManagementPage />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ErrorBoundary>
+    </LoginContext.Provider>
   );
 }
 

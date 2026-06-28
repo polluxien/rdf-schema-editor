@@ -1,7 +1,13 @@
 import { User, IUser } from "@/models/User";
 
 export async function createUser(data: Partial<IUser>): Promise<IUser> {
-  // ! hier noch checken ob dublikate vorliegen
+  if (await User.findOne({ name: data.name })) {
+    throw new Error("Name allready in use");
+  }
+
+  if (await User.findOne({ email: data.email })) {
+    throw new Error("Email allready in use");
+  }
   const user = await User.create(data);
   return user;
 }
@@ -22,8 +28,13 @@ export async function updateUser(
   id: string,
   data: Partial<IUser>,
 ): Promise<IUser> {
-  // * hier noch checken ob bei änderungen dublikate vorliegen 
+    if (data.name && await User.findOne({ name: data.name })) {
+    throw new Error("Name allready in use");
+  }
 
+  if (data.email && await User.findOne({ email: data.email })) {
+    throw new Error("Email allready in use");
+  }
   // * richtiger position zuweisen an Attributen, das nicht ganzer user geschickt werden muss
 
   const user = await User.findByIdAndUpdate(id, data, { new: true });

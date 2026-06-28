@@ -19,6 +19,8 @@ userRouter.post(
   body("name").isString().isLength({ min: 3, max: 100 }),
   body("email").isEmail().normalizeEmail(),
   body("password").isString().isLength({ min: 3, max: 100 }),
+  body("isAdmin").optional().isBoolean(),
+  body("gender").optional().isString().isLength({ min: 5, max: 10 }),
   async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

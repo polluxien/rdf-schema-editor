@@ -11,6 +11,7 @@ export enum Gender {
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
   name: string;
+  email: string;
   password: string;
   gender: Gender;
   isAdmin: boolean;
@@ -35,9 +36,18 @@ const userSchema = new Schema<IUser>(
       minlength: 2,
       maxlength: 50,
     },
+    //! make better controll
     password: {
       type: String,
       required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      minlength: 4,
+      maxlength: 70,
     },
     gender: {
       type: String,

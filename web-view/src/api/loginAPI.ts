@@ -8,6 +8,9 @@ const REAL_FETCH = import.meta.env.VITE_REAL_FETCH === "true";
 // Utility function to handle fetch with error handling
 const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
 
+//skip login
+const ALLREADY_LOGGED_IN = import.meta.env.ALLREADY_LOGGED_IN;
+
 // Function to post login data and get login information
 export async function postLogin(
   name: string,
@@ -16,10 +19,14 @@ export async function postLogin(
   const url = `${API_BASE_URL}/api/login`;
 
   // ! Mock
-  if (USE_MOCK_DATA && !REAL_FETCH) {
-    // Return mock data instead of making a real request
-    if (name === "max" && password === "123") {
-      return { id: "mock-admin-id", isAdmin: true, exp: 3600 } as LoginType;
+  if (ALLREADY_LOGGED_IN) {
+    if (!REAL_FETCH) {
+      // Return mock data instead of making a real request
+      if (name === "max" && password === "123") {
+        return { id: "mock-admin-id", isAdmin: true, exp: 3600 } as LoginType;
+      }
+    } else {
+      //hier user erstellen und einloggen 
     }
   }
 

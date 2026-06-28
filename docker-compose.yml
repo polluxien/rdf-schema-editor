@@ -1,3 +1,4 @@
+#please don't touch
 services:
   frontend:
     image: rse-frontend
@@ -6,10 +7,18 @@ services:
       dockerfile: web-view/Dockerfile
     environment:
       NODE_ENV: production
+      VITE_REAL_FETCH:  "true"
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
 
   backend:
     image: rse-backend
@@ -23,19 +32,46 @@ services:
       CORS_ORIGIN: http://localhost:3000
       JWT_SECRET: schlüssel
       JWT_TTL: 300
+#     PREFILL_USERS: "true"
     ports:
       - "4000:4000"
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
+    restart: on-failure:5
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/api/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   mongodb:
-    image: mongo:latest
+    image: mongo:7.0
     container_name: mongodb
+    # --logpath/--logappend weglassen: das offizielle Mongo-Image loggt bereits nach stdout
+    command: mongod --wiredTigerCacheSizeGB 0.25
     volumes:
       - mongodb-data:/data/db
     ports:
       - "27017:27017"
-    restart: always
+    restart: on-failure:5
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   mongodb-data:
