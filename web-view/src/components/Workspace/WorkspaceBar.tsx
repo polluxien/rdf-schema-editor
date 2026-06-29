@@ -2,8 +2,6 @@ import { Plus } from "lucide-react";
 import { useWorkspace } from "../../hooks/useWorkspace";
 import WorkspaceTab from "./WorkspaceTab";
 import WorkspaceImportExport from "./WorkspaceImportExport";
-import ProfileAvaterButComp from "../Profile/ProfileAvaterButComp";
-import ColorModeToggle from "../UI-NoPurpose/ColorModeToggle";
 
 export default function WorkspaceBar() {
   const {
@@ -33,12 +31,6 @@ export default function WorkspaceBar() {
 
   return (
     <header className="shrink-0 bg-gray-100 text-gray-700 select-none dark:bg-gray-900 dark:text-gray-300">
-      <div className="px-3 py-1 text-[10px] uppercase tracking-widest text-gray-500 border-b border-gray-200 flex items-center justify-between dark:text-gray-600 dark:border-gray-800">
-        <span className="font-bold text-gray-600 dark:text-gray-400">rdf-schema-editor</span>
-        <ColorModeToggle />
-        <ProfileAvaterButComp />
-      </div>
-
       <div className="flex items-stretch border-b border-gray-200 overflow-x-auto dark:border-gray-800">
         {workspaces.map((workspace) => (
           <WorkspaceTab

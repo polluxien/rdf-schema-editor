@@ -7,10 +7,11 @@ import LoadingComponent from "../UI-NoPurpose/LoadingComp";
 interface LoginDialogProps {
   open: boolean;
   onHide: () => void;
+  required?: boolean;
 }
 
-export function LoginDialog({ open, onHide }: LoginDialogProps) {
-  const { setLoginInfo } = useLoginContext();
+export function LoginDialog({ open, onHide, required = false }: LoginDialogProps) {
+  const { setLoginInfo, setUserInfo } = useLoginContext();
   const [loginData, setLoginData] = useState({ name: "", password: "" });
   const [loginFailed, setLoginFailed] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,8 +27,13 @@ export function LoginDialog({ open, onHide }: LoginDialogProps) {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const loginInfo = await postLogin(loginData.name, loginData.password);
+      const [loginInfo, profile] = await postLogin(
+        loginData.name,
+        loginData.password,
+      );
       setLoginInfo(loginInfo);
+      setUserInfo(profile);
+
       setLoginFailed("");
       onHide();
     } catch (err) {
@@ -47,7 +53,7 @@ export function LoginDialog({ open, onHide }: LoginDialogProps) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onCancel();
+        if (!required && e.target === e.currentTarget) onCancel();
       }}
     >
       <div className="relative w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow-lg p-6 dark:bg-gray-900 dark:border-gray-700">
@@ -56,14 +62,16 @@ export function LoginDialog({ open, onHide }: LoginDialogProps) {
             <LoadingComponent label="Signing in..." />
           </div>
         )}
-        {/* Close button */}
-        <button
-          type="button"
-          onClick={onCancel}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-900 transition-colors dark:hover:text-gray-200"
-        >
-          <X size={16} />
-        </button>
+        {!required && (
+          <button
+            title="Sign out"
+            type="button"
+            onClick={onCancel}
+            className="absolute top-4 right-4 text-gray-500 hover:text-gray-900 transition-colors dark:hover:text-gray-200"
+          >
+            <X size={16} />
+          </button>
+        )}
 
         <form onSubmit={onLogin}>
           <h5 className="text-xl font-semibold text-gray-900 mb-6 dark:text-gray-100">
@@ -72,7 +80,9 @@ export function LoginDialog({ open, onHide }: LoginDialogProps) {
 
           <div className="flex flex-col gap-4 mb-4">
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Username</span>
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                Username
+              </span>
               <input
                 type="text"
                 name="name"
@@ -85,7 +95,9 @@ export function LoginDialog({ open, onHide }: LoginDialogProps) {
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Password</span>
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                Password
+              </span>
               <input
                 type="password"
                 name="password"

@@ -77,10 +77,7 @@ userSchema.pre("save", async function () {
 
 userSchema.method(
   "isCorrectPassword",
-  async function (password: string): Promise<Boolean> {
-    if (this.isModified()) {
-      throw new Error("Password is not correct");
-    }
+  async function (password: string): Promise<boolean> {
     return await crypto.compare(password, this.password);
   },
 );

@@ -1,32 +1,35 @@
 import type { LoginType } from "../../../sharedTypes/loginTypes";
+import type { UserType } from "../../../sharedTypes/userTypes";
 import { fetchWithErrorHandling } from "./fetchWithErrorHandling";
+import { getUser } from "./userAPI";
 
 // Mock data and real fetch configuration
-const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === "true";
 const REAL_FETCH = import.meta.env.VITE_REAL_FETCH === "true";
 
 // Utility function to handle fetch with error handling
 const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
 
-//skip login
-const ALLREADY_LOGGED_IN = import.meta.env.ALLREADY_LOGGED_IN;
-
 // Function to post login data and get login information
 export async function postLogin(
   name: string,
   password: string,
-): Promise<LoginType> {
+): Promise<[LoginType, UserType]> {
   const url = `${API_BASE_URL}/api/login`;
 
   // ! Mock
-  if (ALLREADY_LOGGED_IN) {
-    if (!REAL_FETCH) {
-      // Return mock data instead of making a real request
-      if (name === "max" && password === "123") {
-        return { id: "mock-admin-id", isAdmin: true, exp: 3600 } as LoginType;
-      }
-    } else {
-      //hier user erstellen und einloggen 
+  if (!REAL_FETCH) {
+    // Return mock data instead of making a real request
+    if (name === "max" && password === "123") {
+      return [
+        { id: "mock-admin-id", isAdmin: true, exp: 3600 } as LoginType,
+        {
+          _id: "mock-admin-id",
+          name: "Max",
+          email: "max@email.de",
+          isAdmin: true,
+          gender: "Prefer not to say",
+        } as UserType,
+      ];
     }
   }
 
@@ -43,7 +46,7 @@ export async function postLogin(
   console.log(`Response status: ${response.status}`);
   if (response.ok) {
     const loginInfo: LoginType = await response.json();
-    return loginInfo;
+    return [loginInfo, await getUser(loginInfo.id)];
   }
   if (response.status === 401) {
     throw new Error("Invalid credentials");
@@ -56,11 +59,11 @@ export async function postLogin(
 // Function to get login information, returns false if not logged in
 export async function getLogin(
   signal?: AbortSignal,
-): Promise<LoginType | false> {
+): Promise<[LoginType, UserType] | false> {
   const url = `${API_BASE_URL}/api/login`;
 
   // ! Mock
-  if (USE_MOCK_DATA && !REAL_FETCH) {
+  if (!REAL_FETCH) {
     // Return mock data instead of making a real request
     return false; // Simulate not logged in
   }
@@ -73,7 +76,7 @@ export async function getLogin(
   });
   if (response.ok) {
     const loginInfo: LoginType | false = await response.json();
-    return loginInfo;
+    return loginInfo ? [loginInfo, await getUser(loginInfo.id)] : false;
   }
   if (response.status === 401) {
     throw new Error("Invalid credentials");
@@ -88,7 +91,7 @@ export async function deleteLogin(): Promise<void> {
   const url = `${API_BASE_URL}/api/login`;
 
   // ! Mock
-  if (USE_MOCK_DATA && !REAL_FETCH) {
+  if (!REAL_FETCH) {
     // Return mock data instead of making a real request
     return;
   }

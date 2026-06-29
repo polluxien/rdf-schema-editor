@@ -1,6 +1,20 @@
 import { User, IUser } from "@/models/User";
+import { UserType } from "../../../sharedTypes/userTypes";
 
-export async function createUser(data: Partial<IUser>): Promise<IUser> {
+function toUserResponse(userData: IUser[]): UserType[] {
+  return userData.map((user) => ({
+    _id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    gender: user.gender,
+    isAdmin: user.isAdmin,
+    apiKey: user.apiKey,
+    createdAt: user.createdAt.toISOString(),
+    updatedAt: user.updatedAt.toISOString(),
+  }));
+}
+
+export async function createUser(data: Partial<UserType>): Promise<UserType> {
   if (await User.findOne({ name: data.name })) {
     throw new Error("Name allready in use");
   }
@@ -9,30 +23,35 @@ export async function createUser(data: Partial<IUser>): Promise<IUser> {
     throw new Error("Email allready in use");
   }
   const user = await User.create(data);
-  return user;
+  return toUserResponse([user])[0];
 }
 
-export async function getCurrentUser(id: string): Promise<IUser> {
+//  (sharedTypes) ist ein HTTP-Response-DTO — die Konvertierung passiert
+// automatisch durch res.json() / Mongoose toJSON(). Intern arbeiten wir mit IUser.
+export async function getCurrentUser(id: string): Promise<UserType> {
   const user = await User.findById(id);
   if (!user) {
     throw new Error("User could not be found");
   }
-  return user;
+  return toUserResponse([user])[0];
 }
 
-export async function getAllUsers(): Promise<IUser[]> {
-  return User.find();
+export async function getAllUsers(): Promise<UserType[]> {
+  return toUserResponse(await User.find());
 }
 
 export async function updateUser(
   id: string,
-  data: Partial<IUser>,
-): Promise<IUser> {
-    if (data.name && await User.findOne({ name: data.name })) {
+  data: Partial<UserType>,
+): Promise<UserType> {
+  if (
+    data.name &&
+    (await User.findOne({ name: data.name, _id: { $ne: id } }))
+  ) {
     throw new Error("Name allready in use");
   }
 
-  if (data.email && await User.findOne({ email: data.email })) {
+  if (data.email && (await User.findOne({ email: data.email }))) {
     throw new Error("Email allready in use");
   }
   // * richtiger position zuweisen an Attributen, das nicht ganzer user geschickt werden muss
@@ -41,16 +60,12 @@ export async function updateUser(
   if (!user) {
     throw new Error("User could not be found");
   }
-  return user;
+  return toUserResponse([user])[0];
 }
 
 export async function deleteUser(id: string): Promise<void> {
-  const user = await User.findById(id);
-  if (!user) {
-    throw new Error("User could not be found");
-  }
-  await User.deleteOne({ _id: id });
-
+  const result = await User.findByIdAndDelete(id);
+  if (!result) throw new Error("User could not be found");
   // * hier noch die jeweiligen Workspaces löschen
 }
 

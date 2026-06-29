@@ -1,9 +1,9 @@
 import cookieParser from "cookie-parser";
-import { LoginType } from "../../../sharedTypes/loginTypes";
 import { login } from "./loginAuthService";
 
 import dotenv from "dotenv";
 import { JsonWebTokenError, JwtPayload, sign, verify } from "jsonwebtoken";
+import { LoginType } from "../../../sharedTypes/loginTypes";
 
 dotenv.config();
 
