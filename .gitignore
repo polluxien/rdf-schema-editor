@@ -22,3 +22,50 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Coverage
+coverage/
+*/coverage/
+
+# Environment files
+#.env
+#.env.*
+#!.env.example
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.fseventsd
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# VS Code spezifisch
+.history/
+*.code-workspace
+
+# Package manager Lockfiles (optional – auskommentieren falls gewünscht)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Build-Artefakte
+.cache
+.parcel-cache
+.turbo
+*.tsbuildinfo
+
+# Testing & Quality
+.nyc_output
+junit.xml
+
+# Misc
+*.tgz
+.eslintcache

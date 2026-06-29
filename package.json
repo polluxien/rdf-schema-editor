@@ -1,40 +1,15 @@
 {
   "name": "rdf-schema-editor",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "1.0.0",
+  "description": "A simple RDF schema editor for Botanischer Garten and Botanisches Museum Berlin-Dahlem",
+  "author": "Freie Universität Berlin: Bennet Worrmann, Matheo ...",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "test": "vitest",
-    "test:run": "vitest run"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:frontend": "cd web-view && npm run test",
+    "test:backend": "cd backend && npm run test",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && npm install && npm run start",
+    "start:frontend": "cd web-view && npm install && npm run dev"
   },
-  "dependencies": {
-    "@xyflow/react": "^12.10.2",
-    "fast-xml-parser": "^5.8.0",
-    "lucide-react": "^1.14.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "react-error-boundary": "^6.1.1",
-    "react-router-dom": "^7.14.2"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@tailwindcss/vite": "^4.3.0",
-    "@types/node": "^24.12.2",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^10.2.1",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.5.0",
-    "tailwindcss": "^4.3.0",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.10",
-    "vitest": "^4.1.6"
-  }
+  "license": "MIT"
 }
