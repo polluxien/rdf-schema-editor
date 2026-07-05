@@ -6,10 +6,11 @@ import {
   type ReactNode,
 } from "react";
 import type { ColorMode, Edge, Node } from "@xyflow/react";
-import type { Dataset, Mapping, Ontology } from "../types";
+import type { ClassRelation, Dataset, Mapping, Ontology } from "../types";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { AppContext } from "./AppContextType";
 import { loadMockData } from "../lib/useMock";
+import { DEFAULT_BASE_IRI } from "../types/workspace";
 
 const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === "true";
 const COLOR_MODE_STORAGE_KEY = "colorMode";
@@ -151,10 +152,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const updateMappingProperty = useCallback(
-    (mappingId: string, targetPropertyId?: string) =>
+    (mappingId: string, propertyId?: string) =>
       patch((prev) => ({
         mappings: prev.mappings.map((mapping) =>
-          mapping.id === mappingId ? { ...mapping, targetPropertyId } : mapping,
+          mapping.id === mappingId ? { ...mapping, propertyId } : mapping,
         ),
       })),
     [patch],
@@ -181,8 +182,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return {
           mappings: prev.mappings.filter(
             (mapping) =>
-              mapping.sourceColumnId !== columnId &&
-              mapping.targetClassId !== classId,
+              mapping.targetId !== columnId &&
+              mapping.sourceId !== classId,
+          ),
+          relations: prev.relations.filter(
+            (relation) =>
+              relation.sourceClassId !== classId &&
+              relation.targetClassId !== classId,
           ),
         };
       }),
@@ -191,6 +197,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const clearMappings = useCallback(
     () => patch(() => ({ mappings: [] })),
+    [patch],
+  );
+
+  const addRelation = useCallback(
+    (relation: ClassRelation) =>
+      patch((prev) => ({ relations: [...prev.relations, relation] })),
+    [patch],
+  );
+
+  const updateRelationProperty = useCallback(
+    (relationId: string, propertyId?: string) =>
+      patch((prev) => ({
+        relations: prev.relations.map((relation) =>
+          relation.id === relationId ? { ...relation, propertyId } : relation,
+        ),
+      })),
+    [patch],
+  );
+
+  const removeRelation = useCallback(
+    (relationId: string) =>
+      patch((prev) => ({
+        relations: prev.relations.filter((r) => r.id !== relationId),
+      })),
+    [patch],
+  );
+
+  const setBaseIri = useCallback(
+    (baseIri: string) => patch(() => ({ baseIri })),
     [patch],
   );
 
@@ -237,6 +272,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         removeMapping,
         removeMappingsForNode,
         clearMappings,
+        relations: data?.relations ?? [],
+        addRelation,
+        updateRelationProperty,
+        removeRelation,
+        baseIri: data?.baseIri ?? DEFAULT_BASE_IRI,
+        setBaseIri,
         flowNodes: data?.flowNodes ?? [],
         flowEdges: data?.flowEdges ?? [],
         setFlowNodes,
