@@ -141,19 +141,19 @@ function RelationshipDialog({
       <div className="grid grid-cols-2 gap-2 border-b border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-800 dark:bg-gray-950">
         <div className="min-w-0">
           <div className="mb-1 flex items-center gap-1 text-xs font-medium uppercase text-gray-500">
-            <Database size={13} />
-            Column
-          </div>
-          <div className="truncate text-blue-700 dark:text-blue-300">{columnName}</div>
-        </div>
-        <div className="min-w-0">
-          <div className="mb-1 flex items-center gap-1 text-xs font-medium uppercase text-gray-500">
             <Tags size={13} />
             Class
           </div>
           <div className="truncate text-purple-700 dark:text-purple-300">
             {ontologyClass?.label ?? classId}
           </div>
+        </div>
+        <div className="min-w-0">
+          <div className="mb-1 flex items-center gap-1 text-xs font-medium uppercase text-gray-500">
+            <Database size={13} />
+            Column
+          </div>
+          <div className="truncate text-blue-700 dark:text-blue-300">{columnName}</div>
         </div>
       </div>
 
