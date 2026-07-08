@@ -152,6 +152,34 @@ describe("canvasToModel — uri-property subjects", () => {
     expect(yaml).toContain("type: blank");
   });
 
+  it("includes the parent uri-column in the blank-node template when the class has an incoming relation", () => {
+    // meas has NO uri property → blank node.
+    // obs links to meas via hasMeasurement and HAS a uri property (ObsID).
+    // The blank-node key should be Measurement_{Val}_{ObsID} so that two rows
+    // with the same Val but different ObsID still get distinct blank nodes.
+    const state: CanvasState = {
+      ...baseState,
+      mappings: [
+        uriMapping("u-obs", "c-obs", "obs"),
+        { id: "m1", sourceId: "meas", targetId: "c-val", propertyId: "http://ex.org/value" },
+      ],
+      flowNodes: [classNode("obs"), classNode("meas")],
+      relations: [
+        { id: "r1", sourceClassId: "obs", targetClassId: "meas", propertyId: "http://ex.org/hasMeasurement" },
+      ],
+    };
+    const { document, warnings } = canvasToModel(state);
+    expect(warnings).toEqual([]);
+    const yaml = toYarrrml(document);
+    // Blank node template must include both the class's own column (Val) and the
+    // parent's uri-column (ObsID).
+    expect(yaml).toContain("- value: Measurement_$(Val)_$(ObsID)");
+    expect(yaml).toContain("type: blank");
+    // The Observation's hasMeasurement link must use the identical template so
+    // it resolves to the same blank node as the MeasuredValue subject.
+    expect(yaml).toContain("Measurement_$(Val)_$(ObsID)");
+  });
+
   it("warns when a class has neither a uri property nor any mapped column", () => {
     const state: CanvasState = {
       ...baseState,

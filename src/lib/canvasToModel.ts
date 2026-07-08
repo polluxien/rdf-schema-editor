@@ -123,12 +123,13 @@ function columnHoldsIri(column: DatasetColumn | undefined): boolean {
  *
  *   - uri column holding a full IRI → reference the column as-is
  *   - uri column holding a local id → `${base}/{column}` IRI template
- *   - no uri column                → blank node keyed by the first mapped column
+ *   - no uri column                → blank node keyed by own column(s) + parent uri-column(s)
  */
 function resolveSubjectTerm(
   classUri: string,
   uriColumn: DatasetColumn | undefined,
   fallbackColumn: DatasetColumn | undefined,
+  parentUriColumns: DatasetColumn[],
   baseIri: string,
 ): { value: ValueExpression; termType: TermType } {
   if (uriColumn) {
@@ -141,11 +142,18 @@ function resolveSubjectTerm(
       termType: "iri",
     };
   }
-  // No uri property → blank node, keyed by the first mapped column for a stable
-  // id per row (so other TriplesMaps can link to it). Falls back to the class
-  // local name alone when the class has no column mapped at all.
+  // No uri property → blank node. The template key combines the class's own
+  // mapped column with the uri-column(s) of every class that links to this one.
+  // Including the parent uri-column ensures the template evaluates to a unique
+  // value per source row: two rows that share the same StdValue but differ in
+  // ObsDataID (the parent's unique identifier) still get distinct blank nodes.
   const slug = localName(classUri);
-  const template = fallbackColumn ? `${slug}_{${fallbackColumn.name}}` : slug;
+  const keyCols = [fallbackColumn, ...parentUriColumns].filter(
+    (c): c is DatasetColumn => c !== undefined,
+  );
+  const template = keyCols.length > 0
+    ? `${slug}_${keyCols.map((c) => `{${c.name}}`).join("_")}`
+    : slug;
   return { value: { kind: "template", template }, termType: "blankNode" };
 }
 
@@ -164,7 +172,7 @@ function buildObjectFromProperty(
 
 /** Is this mapping the class's subject designator (the "uri" property)? */
 function isUriMapping(mapping: Mapping): boolean {
-  return mapping.propertyId === URI_PROPERTY.id; //FIX: U'm unsure whether this check is correct? It might never resolve to true because of how propertyId is populated.
+  return mapping.propertyId === URI_PROPERTY.id;
 }
 
 export function canvasToModel(state: CanvasState, source?: LogicalSource): BuildResult {
@@ -186,6 +194,21 @@ export function canvasToModel(state: CanvasState, source?: LogicalSource): Build
     if (node.id.startsWith("class-")) classIdsOnCanvas.add(node.id.replace("class-", ""));
   }
 
+  // For each class that is the *target* of a relation, collect the uri-column
+  // of every source class. Built before the main loop so the full reverse index
+  // is available regardless of the ontology-iteration order.
+  const parentUriColumnsFor = new Map<string, DatasetColumn[]>();
+  for (const relation of relations) {
+    const parentMappings = mappings.filter((m) => m.sourceId === relation.sourceClassId);
+    const parentUriColId = parentMappings.find(isUriMapping)?.targetId;
+    const parentUriCol = parentUriColId ? columnsById.get(parentUriColId) : undefined;
+    if (parentUriCol) {
+      const list = parentUriColumnsFor.get(relation.targetClassId) ?? [];
+      if (!list.includes(parentUriCol)) list.push(parentUriCol);
+      parentUriColumnsFor.set(relation.targetClassId, list);
+    }
+  }
+
   // The subject term of a class, derived from its "uri" property mapping (or a
   // blank node). Cached so the subject and any class→class link to it produce
   // the exact same IRI / blank node.
@@ -201,7 +224,8 @@ export function canvasToModel(state: CanvasState, source?: LogicalSource): Build
     const fallbackColumn = columnsById.get(
       classMappings.find((m) => !isUriMapping(m))?.targetId ?? "",
     );
-    const term = resolveSubjectTerm(classUri, uriColumn, fallbackColumn, baseIri);
+    const parentUriColumns = parentUriColumnsFor.get(classId) ?? [];
+    const term = resolveSubjectTerm(classUri, uriColumn, fallbackColumn, parentUriColumns, baseIri);
     subjectTermCache.set(classId, term);
     return term;
   };
