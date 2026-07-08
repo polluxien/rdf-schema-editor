@@ -426,7 +426,7 @@ export default function OntologyCanvas() {
                   <div className="flex items-center gap-2 bg-white/85 backdrop-blur-sm px-3 py-1.5 rounded border border-gray-200 shadow-sm dark:bg-gray-800/80 dark:border-gray-700">
                     <div className="w-3 h-3 rounded bg-blue-500"></div>
                     <span className="text-gray-700 dark:text-gray-300">
-                      Dataset Columns
+                      Dataset Columns ({dataset.name})
                     </span>
                   </div>
                 )}
@@ -434,7 +434,7 @@ export default function OntologyCanvas() {
                   <div className="flex items-center gap-2 bg-white/85 backdrop-blur-sm px-3 py-1.5 rounded border border-gray-200 shadow-sm dark:bg-gray-800/80 dark:border-gray-700">
                     <div className="w-3 h-3 rounded bg-purple-500"></div>
                     <span className="text-gray-700 dark:text-gray-300">
-                      Ontology Classes
+                      Ontology Classes ({ontology.name})
                     </span>
                   </div>
                 )}
