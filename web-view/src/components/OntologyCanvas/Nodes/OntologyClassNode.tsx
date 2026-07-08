@@ -8,7 +8,7 @@ interface OntologyClassNodeData {
 
 function OntologyClassNode({ data }: NodeProps) {
   const nodeData = data as unknown as OntologyClassNodeData;
-  
+
   return (
     <div className="bg-purple-50 border-2 border-purple-400 rounded-lg px-4 py-3 min-w-[180px] shadow-lg dark:bg-purple-900 dark:border-purple-500">
       <Handle

@@ -12,17 +12,19 @@ export const NS = {
   xsd: "http://www.w3.org/2001/XMLSchema#",
 } as const;
 
+export const URI_PROPERTY: OntologyProperty = {
+  id: NS.rdf + "type",
+  uri: NS.rdf + "type",
+  type: "object",
+  label: "uri",
+};
+
 /**
  * System / standard properties that are always offered to the user,
  * regardless of which ontology (if any) is currently loaded.
  */
 export const STANDARD_PROPERTIES: OntologyProperty[] = [
-  {
-    id: NS.rdf + "type",
-    uri: NS.rdf + "type",
-    type: "object",
-    label: "uri",
-  },
+  URI_PROPERTY,
   {
     id: NS.rdf + "value",
     uri: NS.rdf + "value",

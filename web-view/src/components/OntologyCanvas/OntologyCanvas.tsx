@@ -25,8 +25,9 @@ import NodeContextMenu from "./Nodes/NodeContextMenu";
 import CustomEdge from "./Relation/CustomEdge";
 import { EdgeEditProvider } from "./Relation/EdgeEditContext";
 import RelationshipDialog from "./Relation/RelationshipDialog";
+import ClassRelationshipDialog from "./Relation/ClassRelationshipDialog";
 import DragAndDropZone from "../CsvImportDialog/DragAndDropZone";
-import type { Mapping } from "../../types";
+import type { ClassRelation, Mapping } from "../../types";
 import { STANDARD_PROPERTIES } from "../../lib/rdfVocabulary";
 
 const nodeTypes: NodeTypes = {
@@ -59,6 +60,9 @@ export default function OntologyCanvas() {
     dataset,
     addMapping,
     removeMappingsForNode,
+    relations,
+    addRelation,
+    removeRelation,
     flowNodes,
     flowEdges,
     setFlowNodes,
@@ -98,6 +102,7 @@ export default function OntologyCanvas() {
     setFocusedColumnId(columnId);
     setMenu(null);
   };
+
   // -----------------------------------------------------------------------------
 
   // * Handlers for react flow relationships (edges)
@@ -111,30 +116,44 @@ export default function OntologyCanvas() {
 
   const onConnect: OnConnect = useCallback(
     (params) => {
-      const sourceId = params.source?.replace("column-", "") || "";
-      const targetId = params.target?.replace("class-", "") || "";
-      if (!sourceId || !targetId) return;
+      const source = params.source ?? "";
+      const target = params.target ?? "";
+      const isClassToColumn = source.startsWith("class-") && target.startsWith("column-");
+      const isClassToClass =
+        source.startsWith("class-") && target.startsWith("class-");
+      // Only class→column (literal/value mapping) and class→class (object
+      // relationship) connections are semantically valid in RDFS/OWL.
+      if (!isClassToColumn && !isClassToClass) return;
 
-      const mappingId = crypto.randomUUID();
+      const edgeId = crypto.randomUUID();
       const newEdge: Edge = {
         ...params,
-        id: mappingId,
+        id: edgeId,
         type: "custom",
-        source: params.source!,
-        target: params.target!,
+        source,
+        target,
       };
 
       setFlowEdges((eds) => addEdge(newEdge, eds));
       setSelectedEdgeData(newEdge);
-      addMapping({
-        id: mappingId,
-        sourceColumnId: sourceId,
-        targetClassId: targetId,
-      });
+
+      if (isClassToColumn) {
+        addMapping({
+          id: edgeId,
+          sourceId: source.replace("class-", ""),
+          targetId: target.replace("column-", ""),
+        });
+      } else {
+        addRelation({
+          id: edgeId,
+          sourceClassId: source.replace("class-", ""),
+          targetClassId: target.replace("class-", ""),
+        });
+      }
 
       setShowRelationshipDialog(true);
     },
-    [setFlowEdges, addMapping],
+    [setFlowEdges, addMapping, addRelation],
   );
 
   const handleEdgeClick = useCallback(
@@ -156,12 +175,15 @@ export default function OntologyCanvas() {
   const edges = useMemo(
     () =>
       flowEdges.map((edge) => {
-        const mapping = mappings.find((m) => m.id === edge.id);
-        const hasProperty = !!mapping?.targetPropertyId;
+        // class→class edges resolve to a relation, class→column edges to a mapping.
+        const isClassToClass = edge.source.startsWith("class-") && edge.target.startsWith("class-");
+        const propertyId = isClassToClass
+          ? relations.find((r) => r.id === edge.id)?.propertyId
+          : mappings.find((m) => m.id === edge.id)?.propertyId;
+        const hasProperty = !!propertyId;
 
         let propertyLabel: string | undefined;
         if (hasProperty) {
-          const propertyId = mapping?.targetPropertyId;
           const property =
             ontology?.properties.find((p) => p.id === propertyId) ??
             STANDARD_PROPERTIES.find((p) => p.id === propertyId) ??
@@ -181,13 +203,19 @@ export default function OntologyCanvas() {
           },
         };
       }),
-    [flowEdges, mappings, ontology],
+    [flowEdges, mappings, relations, ontology],
   );
 
   const destroyRelationship = (mapping: Mapping | undefined) => {
     if (!mapping) return;
     setFlowEdges((eds) => eds.filter((edge) => edge.id !== mapping.id));
     removeMapping(mapping.id);
+  };
+
+  const destroyClassRelationship = (relation: ClassRelation | undefined) => {
+    if (!relation) return;
+    setFlowEdges((eds) => eds.filter((edge) => edge.id !== relation.id));
+    removeRelation(relation.id);
   };
 
   // -----------------------------------------------------------------------------
@@ -247,11 +275,19 @@ export default function OntologyCanvas() {
             */
           onEdgeClick={(_, edge) => handleEdgeClick(edge.id)}
           onConnect={onConnect}
+          isValidConnection={(connection) => {
+            const src = connection.source ?? "";
+            const tgt = connection.target ?? "";
+            return (
+              (src.startsWith("class-") && tgt.startsWith("class-")) ||
+              (src.startsWith("class-") && tgt.startsWith("column-"))
+            );
+          }}
           nodeTypes={nodeTypes}
           //Context menu handling: open custom menu on right-click, close on any click or move
           onNodeContextMenu={(event, node) => {
-            // ? only show context menu for dataset column nodes (at the moment, could be extended to ontology class nodes as well)
-            if (!node.id.startsWith("column-")) return;
+            // Context menu for column nodes (jump to table) and class nodes (edit subject).
+            if (!node.id.startsWith("column-") && !node.id.startsWith("class-")) return;
             event.preventDefault();
             setMenu({ x: event.clientX, y: event.clientY, nodeId: node.id });
           }}
@@ -418,9 +454,9 @@ export default function OntologyCanvas() {
                   key={mapping.id}
                   className="text-sm text-gray-700 dark:text-gray-300"
                 >
-                  {mapping.targetPropertyId && (
+                  {mapping.propertyId && (
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      ({mapping.targetPropertyId})
+                      ({mapping.propertyId})
                     </span>
                   )}
                 </h3>
@@ -440,11 +476,19 @@ export default function OntologyCanvas() {
       )}
       {showRelationshipDialog && selectedEdgeData && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <RelationshipDialog
-            closeDialog={handleCloseDialog}
-            selectedEdgeData={selectedEdgeData}
-            destroyRelationship={destroyRelationship}
-          />
+          {selectedEdgeData.target.startsWith("class-") ? (
+            <ClassRelationshipDialog
+              closeDialog={handleCloseDialog}
+              selectedEdgeData={selectedEdgeData}
+              destroyRelationship={destroyClassRelationship}
+            />
+          ) : (
+            <RelationshipDialog
+              closeDialog={handleCloseDialog}
+              selectedEdgeData={selectedEdgeData}
+              destroyRelationship={destroyRelationship}
+            />
+          )}
         </div>
       )}
       {

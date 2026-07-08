@@ -12,8 +12,8 @@ function DatasetColumnNode({ data }: NodeProps) {
   return (
     <div className="bg-blue-50 border-2 border-blue-400 rounded-lg px-4 py-3 min-w-[150px] shadow-lg dark:bg-blue-900 dark:border-blue-500">
       <Handle
-        type="source"
-        position={Position.Right}
+        type="target"
+        position={Position.Left}
         className="!w-3 !h-3 !bg-blue-400 !border-2 !border-blue-600"
       />
       <div className="text-blue-950 font-medium text-sm dark:text-white">{nodeData.label}</div>
@@ -22,11 +22,6 @@ function DatasetColumnNode({ data }: NodeProps) {
           e.g., {nodeData.sampleValues.filter(Boolean).slice(0, 2).join(", ")}
         </div>
       )}
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="!w-3 !h-3 !bg-blue-400 !border-2 !border-blue-600"
-      />
     </div>
   );
 }
