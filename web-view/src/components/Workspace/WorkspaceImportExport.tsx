@@ -7,8 +7,7 @@ import RmlExportDialog from "../RmlExportDialog";
 
 export default function WorkspaceImportExport() {
   const { importFiles, importOntologyFromContent } = useFileImport();
-  const { ontology, dataset, mappings, relations, flowNodes, baseIri, setBaseIri } =
-    useAppContext();
+  const { baseIri, setBaseIri } = useAppContext();
   const csvInputRef = useRef<HTMLInputElement>(null);
   const owlInputRef = useRef<HTMLInputElement>(null);
   const [owlDialogOpen, setOwlDialogOpen] = useState(false);
