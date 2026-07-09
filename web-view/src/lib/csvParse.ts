@@ -50,7 +50,7 @@ export interface ParsedCsvGrid {
  */
 export function parseCsvTextToGrid(
   text: string,
-  options: Pick<CsvImportOptions, "delimiter" | "quoteChar" | "hasHeader">
+  options: Pick<CsvImportOptions, "delimiter" | "quoteChar" | "hasHeader" | "maxRows">
 ): ParsedCsvGrid | null {
   const lines = getCsvNonEmptyLines(text);
   if (lines.length === 0) return null;
@@ -62,7 +62,14 @@ export function parseCsvTextToGrid(
   const headers = options.hasHeader
     ? parseLine(lines[0])
     : parseLine(lines[0]).map((_, i) => `Column ${i + 1}`);
-  const rows = lines.slice(startIndex).map(parseLine);
+
+  // Limit to the first `maxRows` data rows when requested (non-positive → all).
+  const dataLines = lines.slice(startIndex);
+  const limitedLines =
+    options.maxRows && options.maxRows > 0
+      ? dataLines.slice(0, options.maxRows)
+      : dataLines;
+  const rows = limitedLines.map(parseLine);
 
   return { headers, rows };
 }
