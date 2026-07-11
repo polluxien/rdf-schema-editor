@@ -121,28 +121,28 @@ export default function DatasetTable() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
 
-          {dataset.rows.length > visibleRows && (
-            <div className="flex justify-center gap-2 p-2 bg-gray-100 border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-              <button
-                onClick={() =>
-                  setVisibleRows((prev) =>
-                    Math.min(prev + 10, dataset.rows.length),
-                  )
-                }
-                className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded text-gray-700 transition-colors dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300"
-              >
-                Show more
-              </button>
-              {visibleRows > 5 && (
-                <button
-                  onClick={() => setVisibleRows(5)}
-                  className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded text-gray-700 transition-colors dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300"
-                >
-                  Show less
-                </button>
-              )}
-            </div>
+      {/* Row controls sit OUTSIDE the scroll box, so they stay centered in the
+          visible panel and don't move with the table's horizontal scroll. */}
+      {isExpanded && dataset.rows.length > visibleRows && (
+        <div className="flex justify-center gap-2 p-2 bg-gray-100 border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+          <button
+            onClick={() =>
+              setVisibleRows((prev) => Math.min(prev + 10, dataset.rows.length))
+            }
+            className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded text-gray-700 transition-colors dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300"
+          >
+            Show more
+          </button>
+          {visibleRows > 5 && (
+            <button
+              onClick={() => setVisibleRows(5)}
+              className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded text-gray-700 transition-colors dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300"
+            >
+              Show less
+            </button>
           )}
         </div>
       )}

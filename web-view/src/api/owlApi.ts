@@ -59,15 +59,19 @@ export async function downloadOwlFile(
   config: OwlApiConfig,
   signal?: AbortSignal,
 ): Promise<OwlDownloadResult> {
-  const url = `${config.baseUrl}/ontologies/${ontologyAcronym}/submissions?display=all`;
+  // Only ask for the latest submission's dataDump link. `submissions?display=all`
+  // makes the server serialize the full metadata of *every* submission, which is
+  // the real slowness (varies wildly per ontology, unrelated to file size).
+  const url = `${config.baseUrl}/ontologies/${ontologyAcronym}/latest_submission?display=dataDump`;
   const response = await fetchWithErrorHandling(url, {
     method: "GET",
     headers: buildHeaders(config),
     signal,
   });
 
+  // latest_submission returns a single submission object (not an array).
   const submissionData = await response.json();
-  let download_url = submissionData[0].dataDump;
+  let download_url = submissionData.dataDump;
   let download_response: Response;
 
   try {

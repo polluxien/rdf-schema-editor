@@ -94,6 +94,8 @@ export default function CsvImportDialog({
   const [hasHeader, setHasHeader] = useState(true);
   const [headerRow, setHeaderRow] = useState(1);
   const [quoteChar, setQuoteChar] = useState('"');
+  const [limitRows, setLimitRows] = useState(false);
+  const [maxRows, setMaxRows] = useState(20);
   const [accordionOpen, setAccordionOpen] = useState(false);
   const [rawPreview, setRawPreview] = useState<string>("");
 
@@ -121,7 +123,13 @@ export default function CsvImportDialog({
   );
 
   const handleConfirm = () => {
-    onConfirm({ delimiter, charset, hasHeader, quoteChar });
+    onConfirm({
+      delimiter,
+      charset,
+      hasHeader,
+      quoteChar,
+      maxRows: limitRows ? maxRows : undefined,
+    });
   };
 
   return (
@@ -264,6 +272,45 @@ export default function CsvImportDialog({
                   }
                   className="w-20 bg-white border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white"
                 />
+              </div>
+            )}
+          </div>
+
+          {/* Limit number of imported rows */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="limitRows"
+                checked={limitRows}
+                onChange={(e) => setLimitRows(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 bg-white text-blue-500 focus:ring-blue-500 focus:ring-offset-white dark:border-gray-600 dark:bg-gray-900 dark:focus:ring-offset-gray-800"
+              />
+              <label
+                htmlFor="limitRows"
+                className="text-sm text-gray-700 dark:text-gray-300"
+              >
+                Import only the first N rows
+              </label>
+            </div>
+
+            {limitRows && (
+              <div className="flex items-center gap-3 pl-6">
+                <label className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                  Rows
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={maxRows}
+                  onChange={(e) =>
+                    setMaxRows(Math.max(1, parseInt(e.target.value) || 1))
+                  }
+                  className="w-24 bg-white border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white"
+                />
+                <span className="text-xs text-gray-400">
+                  fewer rows = faster, lighter model
+                </span>
               </div>
             )}
           </div>
