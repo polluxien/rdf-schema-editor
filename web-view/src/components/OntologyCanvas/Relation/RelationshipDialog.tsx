@@ -1,14 +1,40 @@
 import { useMemo, useState } from "react";
 import type { Edge } from "@xyflow/react";
-import { Database, Link2, Search, Tags, X } from "lucide-react";
+import { ArrowRightLeft, Database, Link2, Search, Tags, X } from "lucide-react";
 import { useAppContext } from "../../../hooks/useAppContext";
-import type { Mapping, OntologyClass, OntologyProperty } from "../../../types";
+import type { LinearTransformation, Mapping, OntologyClass, OntologyProperty } from "../../../types";
 import { STANDARD_PROPERTIES } from "../../../lib/rdfVocabulary";
+
+interface PredefinedConversion {
+  label: string;
+  factor: number;
+  offset: number;
+}
+
+const PREDEFINED_CONVERSIONS: PredefinedConversion[] = [
+  { label: "Inches → cm",       factor: 2.54,       offset: 0 },
+  { label: "cm → Inches",       factor: 0.393701,   offset: 0 },
+  { label: "Feet → Meters",     factor: 0.3048,     offset: 0 },
+  { label: "Meters → Feet",     factor: 3.28084,    offset: 0 },
+  { label: "kg → lb",           factor: 2.20462,    offset: 0 },
+  { label: "lb → kg",           factor: 0.453592,   offset: 0 },
+  { label: "°C → °F",           factor: 1.8,        offset: 32 },
+  { label: "°F → °C",           factor: 0.555556,   offset: -17.777778 },
+  { label: "Miles → km",        factor: 1.60934,    offset: 0 },
+  { label: "km → Miles",        factor: 0.621371,   offset: 0 },
+];
+
+const CUSTOM_KEY = "__custom__";
 
 interface RelationshipDialogProps {
   selectedEdgeData: Edge;
   closeDialog: () => void;
   destroyRelationship: (mapping: Mapping | undefined) => void;
+}
+
+/** Format a number for display: trim unnecessary trailing zeros. */
+function fmt(n: number): string {
+  return parseFloat(n.toPrecision(7)).toString();
 }
 
 function shortName(uri: string): string {
@@ -69,9 +95,15 @@ function RelationshipDialog({
     ontology,
     mappings,
     updateMappingProperty,
+    updateMappingTransformation,
     addMapping,
   } = useAppContext();
   const [query, setQuery] = useState("");
+
+  const [showTransform, setShowTransform] = useState(false);
+  const [selectedConversionKey, setSelectedConversionKey] = useState<string>("");
+  const [customFactor, setCustomFactor] = useState("1");
+  const [customOffset, setCustomOffset] = useState("0");
 
   const classId = selectedEdgeData.source.replace("class-", "");
   const columnId = selectedEdgeData.target.replace("column-", "");
@@ -109,6 +141,67 @@ function RelationshipDialog({
   const selectedProperty = availableProperties.find(
     (property) => property.id === mapping?.propertyId,
   );
+
+  // Sync local transformation state from the persisted mapping whenever the
+  // dialog opens for a different edge.
+  useMemo(() => {
+    const t = mapping?.transformation;
+    if (!t) {
+      setSelectedConversionKey("");
+      setCustomFactor("1");
+      setCustomOffset("0");
+      setShowTransform(false);
+      return;
+    }
+    const preset = PREDEFINED_CONVERSIONS.find(
+      (c) => c.factor === t.factor && c.offset === t.offset,
+    );
+    if (preset) {
+      setSelectedConversionKey(preset.label);
+    } else {
+      setSelectedConversionKey(CUSTOM_KEY);
+      setCustomFactor(String(t.factor));
+      setCustomOffset(String(t.offset));
+    }
+    setShowTransform(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapping?.id]);
+
+  const handleConversionChange = (key: string) => {
+    setSelectedConversionKey(key);
+    if (!key) {
+      applyTransformation(undefined);
+      return;
+    }
+    if (key === CUSTOM_KEY) return; // wait for user to confirm custom values
+    const preset = PREDEFINED_CONVERSIONS.find((c) => c.label === key);
+    if (preset) {
+      applyTransformation({ label: preset.label, factor: preset.factor, offset: preset.offset });
+    }
+  };
+
+  const applyTransformation = (transformation: LinearTransformation | undefined) => {
+    let activeMapping = mapping;
+    if (!activeMapping) {
+      activeMapping = { id: selectedEdgeData.id, sourceId: classId, targetId: columnId };
+      addMapping(activeMapping);
+    }
+    updateMappingTransformation(activeMapping.id, transformation);
+  };
+
+  const handleCustomApply = () => {
+    const factor = parseFloat(customFactor);
+    const offset = parseFloat(customOffset);
+    if (!Number.isFinite(factor) || !Number.isFinite(offset)) return;
+    applyTransformation({ factor, offset });
+  };
+
+  const handleClearTransformation = () => {
+    setSelectedConversionKey("");
+    setCustomFactor("1");
+    setCustomOffset("0");
+    applyTransformation(undefined);
+  };
 
   const handlePropertySelect = (propertyId?: string) => {
     let activeMapping = mapping;
@@ -181,6 +274,108 @@ function RelationshipDialog({
               placeholder="Search properties"
               className="w-full rounded border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
             />
+          </div>
+
+          {/* Transformation section */}
+          <div className="rounded border border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={() => setShowTransform((v) => !v)}
+              className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/60"
+            >
+              <span className="flex items-center gap-2">
+                <ArrowRightLeft size={14} className="text-teal-500" />
+                Linear Transformation
+                {mapping?.transformation && (
+                  <span className="ml-1 rounded bg-teal-100 px-1.5 py-0.5 text-xs text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">
+                    {mapping.transformation.label ??
+                      `×${fmt(mapping.transformation.factor)} +${fmt(mapping.transformation.offset)}`}
+                  </span>
+                )}
+              </span>
+              <span className="text-xs text-gray-400">{showTransform ? "▲" : "▼"}</span>
+            </button>
+
+            {showTransform && (
+              <div className="space-y-2 border-t border-gray-200 px-3 pb-3 pt-2 dark:border-gray-700">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Applies <span className="font-mono">output = factor × input + offset</span> to
+                  the column value before it is written as an RDF literal.
+                </p>
+
+                <select
+                  value={selectedConversionKey}
+                  onChange={(e) => handleConversionChange(e.target.value)}
+                  className="w-full rounded border border-gray-300 bg-white py-1.5 px-2 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                >
+                  <option value="">— No transformation —</option>
+                  {PREDEFINED_CONVERSIONS.map((c) => (
+                    <option key={c.label} value={c.label}>
+                      {c.label}
+                    </option>
+                  ))}
+                  <option value={CUSTOM_KEY}>Custom…</option>
+                </select>
+
+                {selectedConversionKey === CUSTOM_KEY && (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="mb-1 block text-xs text-gray-500">Factor (a)</label>
+                        <input
+                          type="number"
+                          value={customFactor}
+                          onChange={(e) => setCustomFactor(e.target.value)}
+                          className="w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="mb-1 block text-xs text-gray-500">Offset (b)</label>
+                        <input
+                          type="number"
+                          value={customOffset}
+                          onChange={(e) => setCustomOffset(e.target.value)}
+                          className="w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 outline-none focus:border-teal-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                        />
+                      </div>
+                    </div>
+                    <div className="rounded bg-gray-50 px-2 py-1 font-mono text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                      y = {customFactor || "a"} × x + {customOffset || "b"}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCustomApply}
+                      disabled={
+                        !Number.isFinite(parseFloat(customFactor)) ||
+                        !Number.isFinite(parseFloat(customOffset))
+                      }
+                      className="rounded bg-teal-600 px-3 py-1 text-xs text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                )}
+
+                {selectedConversionKey && selectedConversionKey !== CUSTOM_KEY && (
+                  <div className="rounded bg-gray-50 px-2 py-1 font-mono text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                    {(() => {
+                      const p = PREDEFINED_CONVERSIONS.find((c) => c.label === selectedConversionKey)!;
+                      return `y = ${fmt(p.factor)} × x + ${fmt(p.offset)}`;
+                    })()}
+                  </div>
+                )}
+
+                {mapping?.transformation && (
+                  <button
+                    type="button"
+                    onClick={handleClearTransformation}
+                    className="text-xs text-red-500 hover:underline"
+                  >
+                    Remove transformation
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="max-h-80 overflow-y-auto rounded border border-gray-200 dark:border-gray-800">

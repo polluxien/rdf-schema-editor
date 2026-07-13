@@ -191,3 +191,56 @@ describe("canvasToModel — uri-property subjects", () => {
     expect(result.warnings.some((w) => w.includes("Observation"))).toBe(true);
   });
 });
+
+describe("canvasToModel — linear transformation", () => {
+  const stateWithTransform: CanvasState = {
+    ...baseState,
+    mappings: [
+      uriMapping("u-obs", "c-obs", "obs"),
+      uriMapping("u-meas", "c-meas", "meas"),
+      {
+        id: "m1",
+        sourceId: "meas",
+        targetId: "c-val",
+        propertyId: "http://ex.org/value",
+        transformation: { label: "Inches → cm", factor: 2.54, offset: 0 },
+      },
+    ],
+    flowNodes: [classNode("obs"), classNode("meas")],
+    relations: [],
+  };
+
+  it("wraps the column reference in a FunctionCall when a transformation is set", () => {
+    const { document, warnings } = canvasToModel(stateWithTransform);
+    expect(warnings).toEqual([]);
+    const measMap = document.triplesMaps.find((t) => t.id === "Measurement")!;
+    const pom = measMap.predicateObjectMaps[0];
+    expect(pom.object.value.kind).toBe("function");
+    if (pom.object.value.kind !== "function") return;
+    expect(pom.object.value.fn.fn).toContain("linearTransform");
+    const params = pom.object.value.fn.parameters;
+    const inputParam = params.find((p) => p.parameter.includes("inputValue"));
+    const factorParam = params.find((p) => p.parameter.includes("factor"));
+    const offsetParam = params.find((p) => p.parameter.includes("offset"));
+    expect(inputParam?.value).toEqual({ kind: "reference", column: "Val" });
+    expect(factorParam?.value).toEqual({ kind: "constant", value: "2.54" });
+    expect(offsetParam?.value).toEqual({ kind: "constant", value: "0" });
+  });
+
+  it("serializes the FunctionCall correctly in YARRRML", () => {
+    const { document } = canvasToModel(stateWithTransform);
+    const yaml = toYarrrml(document);
+    expect(yaml).toContain("function:");
+    expect(yaml).toContain("linearTransform");
+    expect(yaml).toContain("inputValue");
+    expect(yaml).toContain("$(Val)");
+    expect(yaml).toContain("2.54");
+  });
+
+  it("emits a plain reference when no transformation is set", () => {
+    const { document } = canvasToModel(baseState);
+    const measMap = document.triplesMaps.find((t) => t.id === "Measurement")!;
+    const pom = measMap.predicateObjectMaps[0];
+    expect(pom.object.value.kind).toBe("reference");
+  });
+});

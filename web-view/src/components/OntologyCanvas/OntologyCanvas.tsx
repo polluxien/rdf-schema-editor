@@ -445,7 +445,7 @@ export default function OntologyCanvas() {
         {
           // ? For debugging properties of edges
         }
-        {
+        {/**
         <div>
           {mappings && mappings.length > 0 && (
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm px-4 py-2 rounded border border-gray-200 shadow-sm dark:bg-gray-800/90 dark:border-gray-700">
@@ -464,7 +464,7 @@ export default function OntologyCanvas() {
             </div>
           )}
         </div>
-        }
+        */}
       </EdgeEditProvider>
       {showOntologyAddObjectDialog && (
         <div className="absolute top-4 right-4">

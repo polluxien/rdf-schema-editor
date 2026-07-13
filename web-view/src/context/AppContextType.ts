@@ -1,6 +1,6 @@
 import { createContext, type Dispatch, type SetStateAction } from "react";
 import type { ColorMode, Edge, Node } from "@xyflow/react";
-import type { ClassRelation, Dataset, Mapping, Ontology } from "../types";
+import type { ClassRelation, Dataset, LinearTransformation, Mapping, Ontology } from "../types";
 
 export interface AppContextType {
   activeWorkspaceId: string | null;
@@ -13,6 +13,7 @@ export interface AppContextType {
   mappings: Mapping[];
   addMapping: (mapping: Mapping) => void;
   updateMappingProperty: (mappingId: string, targetPropertyId?: string) => void;
+  updateMappingTransformation: (mappingId: string, transformation?: LinearTransformation) => void;
   removeMapping: (mappingId: string) => void;
   removeMappingsForNode: (nodeId: string) => void;
   clearMappings: () => void;

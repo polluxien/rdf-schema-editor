@@ -24,13 +24,22 @@ import type {
   ClassRelation,
   Dataset,
   DatasetColumn,
+  LinearTransformation,
   Mapping,
   Ontology,
   OntologyProperty,
 } from "../types";
-import { STANDARD_PROPERTIES, URI_PROPERTY } from "./rdfVocabulary";
+import {
+  LINEAR_TRANSFORM_FAC,
+  LINEAR_TRANSFORM_FN,
+  LINEAR_TRANSFORM_IN,
+  LINEAR_TRANSFORM_OFF,
+  STANDARD_PROPERTIES,
+  URI_PROPERTY,
+} from "./rdfVocabulary";
 import { DEFAULT_BASE_IRI } from "../types/workspace";
 import type {
+  FunctionCall,
   LogicalSource,
   ObjectMap,
   PredicateObjectMap,
@@ -157,12 +166,45 @@ function resolveSubjectTerm(
   return { value: { kind: "template", template }, termType: "blankNode" };
 }
 
+/**
+ * Wraps a column reference in an `ex:linearTransform` FunctionCall when the
+ * mapping carries a LinearTransformation. The function signature is:
+ *   ex:linearTransform(ex:inputValue: $(col), ex:factor: a, ex:offset: b)
+ */
+function buildLinearTransformValue(
+  columnName: string,
+  transformation: LinearTransformation,
+  registry: PrefixRegistry,
+): ValueExpression {
+  const fn: FunctionCall = {
+    fn: registry.curie(LINEAR_TRANSFORM_FN),
+    parameters: [
+      {
+        parameter: registry.curie(LINEAR_TRANSFORM_IN),
+        value: { kind: "reference", column: columnName },
+      },
+      {
+        parameter: registry.curie(LINEAR_TRANSFORM_FAC),
+        value: { kind: "constant", value: String(transformation.factor) },
+      },
+      {
+        parameter: registry.curie(LINEAR_TRANSFORM_OFF),
+        value: { kind: "constant", value: String(transformation.offset) },
+      },
+    ],
+  };
+  return { kind: "function", fn };
+}
+
 function buildObjectFromProperty(
   property: OntologyProperty,
   columnName: string,
   registry: PrefixRegistry,
+  transformation?: LinearTransformation,
 ): ObjectMap {
-  const value: ValueExpression = { kind: "reference", column: columnName };
+  const value: ValueExpression = transformation
+    ? buildLinearTransformValue(columnName, transformation, registry)
+    : { kind: "reference", column: columnName };
   if (property.type === "object") return { value, termType: "iri" };
   if (property.type === "datatype") {
     return property.datatype ? { value, datatype: registry.curie(property.datatype) } : { value };
@@ -271,7 +313,7 @@ export function canvasToModel(state: CanvasState, source?: LogicalSource): Build
       }
       predicateObjectMaps.push({
         predicates: [registry.curie(property.uri)],
-        object: buildObjectFromProperty(property, column.name, registry),
+        object: buildObjectFromProperty(property, column.name, registry, mapping.transformation),
       });
     }
 

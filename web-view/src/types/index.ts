@@ -43,11 +43,26 @@ export interface Dataset {
   rows: string[][];
 }
 
+/**
+ * A linear unit / value transformation applied to a column value before it is
+ * mapped to an RDF literal: `output = factor * input + offset`.
+ */
+export interface LinearTransformation {
+  /** Human-readable conversion name, e.g. "Inches → cm". `undefined` = custom. */
+  label?: string;
+  /** Multiplicative factor (a in y = a·x + b). */
+  factor: number;
+  /** Additive offset (b in y = a·x + b). */
+  offset: number;
+}
+
 export interface Mapping {
   id: string;
   sourceId: string;
   targetId: string;
   propertyId?: string;
+  /** Optional linear transformation applied to the column value at export time. */
+  transformation?: LinearTransformation;
 }
 
 /**

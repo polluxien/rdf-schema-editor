@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import type { ColorMode, Edge, Node } from "@xyflow/react";
-import type { ClassRelation, Dataset, Mapping, Ontology } from "../types";
+import type { ClassRelation, Dataset, LinearTransformation, Mapping, Ontology } from "../types";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { AppContext } from "./AppContextType";
 import { loadMockData } from "../lib/useMock";
@@ -161,6 +161,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [patch],
   );
 
+  const updateMappingTransformation = useCallback(
+    (mappingId: string, transformation?: LinearTransformation) =>
+      patch((prev) => ({
+        mappings: prev.mappings.map((mapping) =>
+          mapping.id === mappingId ? { ...mapping, transformation } : mapping,
+        ),
+      })),
+    [patch],
+  );
+
   const removeMapping = useCallback(
     (mappingId: string) =>
       patch((prev) => ({
@@ -269,6 +279,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         mappings: data?.mappings ?? [],
         addMapping,
         updateMappingProperty,
+        updateMappingTransformation,
         removeMapping,
         removeMappingsForNode,
         clearMappings,

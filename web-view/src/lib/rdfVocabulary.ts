@@ -56,3 +56,14 @@ export const STANDARD_PROPERTIES: OntologyProperty[] = [
     label: "owl:sameAs",
   },
 ];
+
+/**
+ * Custom FnO (Function Ontology) function used to represent linear
+ * transformations (y = factor * x + offset) in the exported RML/YARRRML.
+ * The downstream RML processor must implement this function.
+ */
+export const EX_NS = "http://example.org/function#";
+export const LINEAR_TRANSFORM_FN  = EX_NS + "linearTransform";
+export const LINEAR_TRANSFORM_IN  = EX_NS + "inputValue";
+export const LINEAR_TRANSFORM_FAC = EX_NS + "factor";
+export const LINEAR_TRANSFORM_OFF = EX_NS + "offset";
