@@ -31,7 +31,7 @@ jobs:
           exit 1
 
       - name: Check frontend responds
-        run: curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-connrefused http://localhost:3000
+        run: curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-connrefused http://127.0.0.1:3000
 
       - name: Show logs on failure
         if: failure()
