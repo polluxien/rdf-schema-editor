@@ -1,16 +1,32 @@
-import type { Workspace, WorkspaceData } from "../types/workspace";
+import type { Workspace, WorkspaceData, WorkspaceSaveData } from "../types/workspace";
 import { fetchWithErrorHandling } from "./fetchWithErrorHandling";
 
 const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL;
-const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === "true";
 const REAL_FETCH = import.meta.env.VITE_REAL_FETCH === "true";
 
 export interface WorkspaceWithData extends Workspace {
   data: WorkspaceData;
 }
 
+// surfaces the backend's `{ error: "..." }` body when present, so the UI can
+// show the exact reason a save/load/delete failed instead of a generic message
+async function extractErrorMessage(
+  response: Response,
+  fallback: string,
+): Promise<string> {
+  try {
+    const body = await response.clone().json();
+    if (typeof body?.error === "string" && body.error.length > 0) {
+      return body.error;
+    }
+  } catch {
+    // response body wasn't JSON — fall back below
+  }
+  return `${fallback} (${response.status} ${response.statusText})`;
+}
+
 export async function getWorkspaces(): Promise<Workspace[]> {
-  if (USE_MOCK_DATA && !REAL_FETCH) {
+  if (!REAL_FETCH) {
     return [];
   }
 
@@ -28,11 +44,11 @@ export async function getWorkspaces(): Promise<Workspace[]> {
     return [];
   }
 
-  throw new Error(`Error fetching workspaces: ${response.statusText}`);
+  throw new Error(await extractErrorMessage(response, "Error fetching workspaces"));
 }
 
 export async function getWorkspace(id: string): Promise<WorkspaceWithData | null> {
-  if (USE_MOCK_DATA && !REAL_FETCH) {
+  if (!REAL_FETCH) {
     return null;
   }
 
@@ -50,13 +66,13 @@ export async function getWorkspace(id: string): Promise<WorkspaceWithData | null
     return null;
   }
 
-  throw new Error(`Error fetching workspace: ${response.statusText}`);
+  throw new Error(await extractErrorMessage(response, "Error fetching workspace"));
 }
 
 export async function createWorkspace(
-  workspace: Partial<Workspace> & { data?: WorkspaceData }
+  workspace: Partial<Workspace> & { data?: WorkspaceSaveData }
 ): Promise<Workspace> {
-  if (USE_MOCK_DATA && !REAL_FETCH) {
+  if (!REAL_FETCH) {
     return {
       id: crypto.randomUUID(),
       name: workspace.name || "untitled",
@@ -76,14 +92,14 @@ export async function createWorkspace(
     return response.json();
   }
 
-  throw new Error(`Error creating workspace: ${response.statusText}`);
+  throw new Error(await extractErrorMessage(response, "Error creating workspace"));
 }
 
 export async function updateWorkspace(
   id: string,
-  updates: Partial<Workspace> & { data?: WorkspaceData }
+  updates: Partial<Workspace> & { data?: WorkspaceSaveData }
 ): Promise<Workspace> {
-  if (USE_MOCK_DATA && !REAL_FETCH) {
+  if (!REAL_FETCH) {
     return {
       id,
       name: updates.name || "untitled",
@@ -103,11 +119,11 @@ export async function updateWorkspace(
     return response.json();
   }
 
-  throw new Error(`Error updating workspace: ${response.statusText}`);
+  throw new Error(await extractErrorMessage(response, "Error updating workspace"));
 }
 
 export async function deleteWorkspace(id: string): Promise<void> {
-  if (USE_MOCK_DATA && !REAL_FETCH) {
+  if (!REAL_FETCH) {
     return;
   }
 
@@ -121,5 +137,5 @@ export async function deleteWorkspace(id: string): Promise<void> {
     return;
   }
 
-  throw new Error(`Error deleting workspace: ${response.statusText}`);
+  throw new Error(await extractErrorMessage(response, "Error deleting workspace"));
 }

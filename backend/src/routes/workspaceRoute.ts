@@ -1,197 +1,126 @@
 import express from "express";
-import { connectToDatabase } from "@/services/mongodb";
-import { Workspace } from "@/models/Workspace";
-import { getCurrentUser } from "@/services/userServices";
+import { body, param, validationResult } from "express-validator";
+import { requiresAuthentication } from "./authentification";
+import {
+  createWorkspace,
+  deleteWorkspace,
+  getWorkspace,
+  getWorkspaces,
+  updateWorkspace,
+} from "@/services/workspaceServices";
 
 export const workspaceRouter = express.Router();
 
-//get an existing Workspace
+workspaceRouter.use(requiresAuthentication);
 
-// ! under Construction
-/*
-workspaceRouter.get("/", async (req, res) => {
+// service layer throws this exact message for both "no such id" and
+// "id belongs to a different user" -> surface as 404 with the real message;
+// anything else is an unexpected error and should bubble to the 500 handler
+function handleNotFoundOr500(
+  err: unknown,
+  res: express.Response,
+  next: express.NextFunction,
+) {
+  if (err instanceof Error && err.message === "Workspace could not be found") {
+    return res.status(404).json({ error: err.message });
+  }
+  next(err);
+}
+
+//? get all workspaces of the current user
+workspaceRouter.get("/", async (req, res, next) => {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    await connectToDatabase();
-
-    const workspaces = await Workspace.find({ userId: user.id })
-      .select("_id name description createdAt updatedAt")
-      .sort({ updatedAt: -1 });
-
-    const result = workspaces.map(
-      (ws: {
-        _id: { toString(): string };
-        name: string;
-        description: string;
-      }) => ({
-        id: ws._id.toString(),
-        name: ws.name,
-        description: ws.description,
-      }),
-    );
-
-    return res.json(result);
-  } catch (error) {
-    console.error("Get workspaces error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    const workspaces = await getWorkspaces(req.userID as string);
+    return res.status(200).json(workspaces);
+  } catch (err) {
+    next(err);
   }
 });
 
-//create and save new Workspace
-workspaceRouter.post("/", async (req, res) => {
-  try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return res.status(401).json({ error: "Unauthorized" });
+//? create and save a new workspace for the current user
+workspaceRouter.post(
+  "/",
+  body("name").optional().isString().isLength({ min: 1, max: 100 }),
+  body("description").optional().isString(),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-
-    const body = await req.body;
-    const { name, description, data } = body;
-
-    await connectToDatabase();
-
-    const workspace = await Workspace.create({
-      userId: user.id,
-      name: name || "untitled",
-      description: description || "",
-      data: data || {
-        ontology: null,
-        dataset: null,
-        mappings: [],
-        flowNodes: [],
-        flowEdges: [],
-      },
-    });
-
-    return res.json({
-      id: workspace._id.toString(),
-      name: workspace.name,
-      description: workspace.description,
-    });
-  } catch (error) {
-    console.error("Create workspace error:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-/*
-workspaceRouter.get("/:id", async (req, res) => {
-  try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    try {
+      const { name, description, data } = req.body;
+      const workspace = await createWorkspace(req.userID as string, {
+        name,
+        description,
+        data,
+      });
+      return res.status(201).json(workspace);
+    } catch (err) {
+      next(err);
     }
+  },
+);
 
-    const id = req.params!.id;
-
-    await connectToDatabase();
-
-    const workspace = await Workspace.findOne({
-      _id: id,
-      userId: user.id,
-    });
-
-    if (!workspace) {
-      return NextResponse.json(
-        { error: "Workspace not found" },
-        { status: 404 },
+//? get a single workspace of the current user
+workspaceRouter.get(
+  "/:id",
+  param("id").isMongoId(),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    try {
+      const workspace = await getWorkspace(
+        req.userID as string,
+        req.params!.id as string,
       );
+      return res.status(200).json(workspace);
+    } catch (err) {
+      handleNotFoundOr500(err, res, next);
     }
+  },
+);
 
-    return NextResponse.json({
-      id: workspace._id.toString(),
-      name: workspace.name,
-      description: workspace.description,
-      data: workspace.data,
-    });
-  } catch (error) {
-    console.error("Get workspace error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-});
-
-workspaceRouter.put("/:id", async (req, res) => {
-  try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//? update (save) an existing workspace of the current user
+workspaceRouter.put(
+  "/:id",
+  param("id").isMongoId(),
+  body("name").optional().isString().isLength({ min: 1, max: 100 }),
+  body("description").optional().isString(),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-
-    const id = req.params!.id;
-
-    const body = await req.body;
-    const { name, description, data } = body;
-
-    await connectToDatabase();
-
-    const updateData: Record<string, unknown> = {};
-    if (name !== undefined) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
-    if (data !== undefined) updateData.data = data;
-
-    const workspace = await Workspace.findOneAndUpdate(
-      { _id: id, userId: user.id },
-      { $set: updateData },
-      { new: true },
-    );
-
-    if (!workspace) {
-      return NextResponse.json(
-        { error: "Workspace not found" },
-        { status: 404 },
+    try {
+      const { name, description, data } = req.body;
+      const workspace = await updateWorkspace(
+        req.userID as string,
+        req.params!.id as string,
+        { name, description, data },
       );
+      return res.status(200).json(workspace);
+    } catch (err) {
+      handleNotFoundOr500(err, res, next);
     }
+  },
+);
 
-    return NextResponse.json({
-      id: workspace._id.toString(),
-      name: workspace.name,
-      description: workspace.description,
-    });
-  } catch (error) {
-    console.error("Update workspace error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-});
-
-workspaceRouter.delete("/:id", async (req, res) => {
-  try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//? delete a workspace of the current user
+workspaceRouter.delete(
+  "/:id",
+  param("id").isMongoId(),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-
-    const id = req.params!.id;
-    await connectToDatabase();
-
-    const result = await Workspace.deleteOne({
-      _id: id,
-      userId: user.id,
-    });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json(
-        { error: "Workspace not found" },
-        { status: 404 },
-      );
+    try {
+      await deleteWorkspace(req.userID as string, req.params!.id as string);
+      return res.status(204).send();
+    } catch (err) {
+      handleNotFoundOr500(err, res, next);
     }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Delete workspace error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-});
-*/
+  },
+);

@@ -70,3 +70,4 @@ junit.xml
 # Misc
 *.tgz
 .eslintcache
+backend/tests/coverage

@@ -5,6 +5,13 @@ import { optionalAuthentication } from "./authentification";
 
 export const loginRouter = express.Router();
 
+// Secure/SameSite=None cookies require an actual HTTPS connection to be sent
+// by the browser at all. NODE_ENV=production does not imply HTTPS (e.g. the
+// docker-compose stack runs production builds over plain http://localhost),
+// so this is controlled by its own env var instead.
+const useSecureCookie = process.env.COOKIE_SECURE === "true";
+const cookieSameSite = useSecureCookie ? ("none" as const) : ("lax" as const);
+
 //? create login
 loginRouter.post(
   "/",
@@ -30,8 +37,8 @@ loginRouter.post(
       res.cookie("access_token", jwttokenString, {
         httpOnly: true,
         expires: new Date(loginResourceBack.exp * 1000),
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: useSecureCookie,
+        sameSite: cookieSameSite,
       });
       return res.status(200).json(loginResourceBack);
     } catch (error) {
@@ -58,8 +65,8 @@ loginRouter.get("/", optionalAuthentication, async (req, res, next) => {
     if (!loginResourceBack) {
       res.clearCookie("access_token", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "none",
+        secure: useSecureCookie,
+        sameSite: cookieSameSite,
       });
       return res.status(200).json(false);
     }
@@ -77,8 +84,8 @@ loginRouter.delete("/", async (req, res, next) => {
   try {
     res.clearCookie("access_token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
+      secure: useSecureCookie,
+      sameSite: cookieSameSite,
     });
     return res.status(200).json({ message: "Cookie erfolgreich gelöscht!" });
   } catch (err) {

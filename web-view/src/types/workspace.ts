@@ -5,6 +5,10 @@ export interface Workspace {
   id: string;
   name: string;
   description: string;
+  /** id of the persisted workspace on the backend, once saved to the account */
+  remoteId?: string;
+  /** ISO timestamp of the last successful save to the account */
+  savedAt?: string;
 }
 
 export interface WorkspaceData {
@@ -29,3 +33,11 @@ export const EMPTY_WORKSPACE_DATA: WorkspaceData = {
   flowEdges: [],
   baseIri: DEFAULT_BASE_IRI,
 };
+
+/** what actually gets persisted to the backend on save - ontology/dataset are
+ * cached client-side instead (see lib/workspaceLocalCache.ts) since they can
+ * be arbitrarily large and would make every save heavy */
+export type WorkspaceSaveData = Pick<
+  WorkspaceData,
+  "mappings" | "flowNodes" | "flowEdges"
+>;

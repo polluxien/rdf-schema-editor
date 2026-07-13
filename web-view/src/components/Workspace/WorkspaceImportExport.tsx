@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
+import { Check, Cloud, Loader2 } from "lucide-react";
 import { useFileImport } from "../FileImport/FileImportContext";
+<<<<<<< HEAD
 import { useAppContext } from "../../hooks/useAppContext";
 import { useWorkspace } from "../../hooks/useWorkspace";
 import OwlImportDialog from "../OwlImportDialog";
@@ -10,12 +12,42 @@ export default function WorkspaceImportExport() {
   const { importFiles, importOntologyFromContent } = useFileImport();
   const { ontology, dataset, baseIri, setBaseIri } = useAppContext();
   const { updateWorkspaceData, activeWorkspaceId } = useWorkspace();
+=======
+import { useWorkspace } from "../../hooks/useWorkspace";
+import { useLoginContext } from "../../api/LoginInfo";
+import OwlImportDialog from "../OwlImportDialog";
+import WorkspaceSaveErrorToast from "./WorkspaceSaveErrorToast";
+
+export default function WorkspaceImportExport() {
+  const { importFiles, importOntologyFromContent } = useFileImport();
+  const { loginInfo } = useLoginContext();
+  const { activeWorkspaceId, activeWorkspace, saveWorkspace, savingWorkspaceId } =
+    useWorkspace();
+>>>>>>> 8342477 (save limit 100mb, fix save workspace rough, add unit tests, fix user tests, add shared worspace types, new component for user settings, add new workspace logic, add local cache for reloading page)
   const csvInputRef = useRef<HTMLInputElement>(null);
   const owlInputRef = useRef<HTMLInputElement>(null);
   const rmlInputRef = useRef<HTMLInputElement>(null);
   const [owlDialogOpen, setOwlDialogOpen] = useState(false);
+<<<<<<< HEAD
   const [rmlDialogOpen, setRmlDialogOpen] = useState(false);
   const [importingRml, setImportingRml] = useState(false);
+=======
+  const [justSavedId, setJustSavedId] = useState<string | null>(null);
+
+  const isSaving = savingWorkspaceId === activeWorkspaceId;
+  const isLoggedIn = Boolean(loginInfo);
+
+  const handleSave = async () => {
+    if (!activeWorkspaceId) return;
+    try {
+      await saveWorkspace(activeWorkspaceId);
+      setJustSavedId(activeWorkspaceId);
+      setTimeout(() => setJustSavedId(null), 2000);
+    } catch {
+      // saveError from context already reflects the failure
+    }
+  };
+>>>>>>> 8342477 (save limit 100mb, fix save workspace rough, add unit tests, fix user tests, add shared worspace types, new component for user settings, add new workspace logic, add local cache for reloading page)
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -87,6 +119,7 @@ export default function WorkspaceImportExport() {
         (yarr)rml
       </button>
 
+<<<<<<< HEAD
       <span className="text-gray-300 dark:text-gray-700">|</span>
       <label className="flex items-center gap-1.5 text-gray-500 select-none dark:text-gray-600">
         base IRI
@@ -99,6 +132,35 @@ export default function WorkspaceImportExport() {
           className="w-48 rounded border border-gray-300 bg-white px-2 py-0.5 text-gray-900 outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
         />
       </label>
+=======
+      {isLoggedIn && (
+        <>
+          <span className="text-gray-300 dark:text-gray-700">|</span>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving || !activeWorkspaceId}
+            title={
+              activeWorkspace?.savedAt
+                ? `Zuletzt gespeichert: ${new Date(activeWorkspace.savedAt).toLocaleString("de-DE")}`
+                : "Aktuellen Workspace im Account speichern"
+            }
+            className={`flex items-center gap-1 ${actionClass}`}
+          >
+            {isSaving ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : justSavedId === activeWorkspaceId ? (
+              <Check size={12} />
+            ) : (
+              <Cloud size={12} />
+            )}
+            save
+          </button>
+        </>
+      )}
+
+      <WorkspaceSaveErrorToast />
+>>>>>>> 8342477 (save limit 100mb, fix save workspace rough, add unit tests, fix user tests, add shared worspace types, new component for user settings, add new workspace logic, add local cache for reloading page)
 
       <input
         ref={csvInputRef}

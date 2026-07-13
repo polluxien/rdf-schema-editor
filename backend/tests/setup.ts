@@ -10,7 +10,8 @@ beforeAll(async () => {
 
 afterEach(async () => {
   // wichtig: zwischen jedem Test die Collections leeren
-  const collections = await mongoose.connection.db!.collections();
+  if (!mongoose.connection.db) return;
+  const collections = await mongoose.connection.db.collections();
   for (const c of collections) {
     await c.deleteMany({});
   }

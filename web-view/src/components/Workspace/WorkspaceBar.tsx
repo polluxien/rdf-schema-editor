@@ -11,6 +11,7 @@ export default function WorkspaceBar() {
     addWorkspace,
     renameWorkspace,
     removeWorkspace,
+    isLoadingWorkspaces,
   } = useWorkspace();
 
   const nextUntitledName = () => {
@@ -51,6 +52,11 @@ export default function WorkspaceBar() {
         >
           <Plus size={14} strokeWidth={1.5} />
         </button>
+        {isLoadingWorkspaces && (
+          <span className="flex items-center px-2.5 text-xs text-gray-400 select-none dark:text-gray-600">
+            Loading workspaces...
+          </span>
+        )}
       </div>
 
       <WorkspaceImportExport />
