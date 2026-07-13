@@ -67,7 +67,7 @@ function ErrorFallback({ error }: ErrorFallbackProps) {
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <RefreshCw size={14} />
-            Seite neu laden
+            Reload Page
           </button>
         </div>
       </div>
