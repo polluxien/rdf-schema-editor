@@ -1,0 +1,42 @@
+name: Test - Docker Compose | Build & Health Check
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images
+        run: docker compose build
+
+      - name: Start stack
+        run: docker compose up -d
+
+      - name: Wait for backend to report healthy
+        run: |
+          for i in $(seq 1 30); do
+            health=$(docker inspect -f '{{.State.Health.Status}}' "$(docker compose ps -q backend)" 2>/dev/null || echo "starting")
+            echo "backend: $health"
+            if [ "$health" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::backend did not become healthy in time"
+          exit 1
+
+      - name: Check frontend responds
+        run: curl --fail --silent --show-error --retry 10 --retry-delay 3 --retry-connrefused http://localhost:3000
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
