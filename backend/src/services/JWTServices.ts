@@ -8,7 +8,7 @@ import { LoginType } from "../../../sharedTypes/loginTypes";
 dotenv.config();
 
 export async function verifyPasswordAndCreateJWT(
-  name: string,
+  identifier: string,
   password: string,
 ): Promise<string | undefined> {
   const jwtSecret = process.env.JWT_SECRET;
@@ -16,7 +16,7 @@ export async function verifyPasswordAndCreateJWT(
   if (!jwtSecret || !jwtTtl)
     throw new Error("verifyJWT or jwtTtl is not defined");
 
-  const user = await login(name, password);
+  const user = await login(identifier, password);
   if (user) {
     const payload: JwtPayload = {
       sub: user.id,
