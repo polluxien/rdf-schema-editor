@@ -1,5 +1,6 @@
 import { fetchWithErrorHandling } from "./fetchWithErrorHandling";
 import type {
+  CreateUserPayload,
   UpdateUserPayload,
   UserType,
 } from "../../../sharedTypes/userTypes";
@@ -62,6 +63,18 @@ export async function getUser(id: string): Promise<UserType> {
       credentials: "include",
     },
   );
+  return response.json();
+}
+
+export async function createUser(
+  data: CreateUserPayload,
+): Promise<UserType> {
+  const response = await fetchWithErrorHandling(`${API_BASE_URL}/api/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
   return response.json();
 }
 

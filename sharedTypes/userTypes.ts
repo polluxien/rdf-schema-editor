@@ -8,6 +8,14 @@ export type UpdateUserPayload = {
   isAdmin?: boolean;
 };
 
+export type CreateUserPayload = {
+  name: string;
+  email: string;
+  password: string;
+  gender?: Gender;
+  isAdmin?: boolean;
+};
+
 export type UserType = {
   _id: string;
   name: string;

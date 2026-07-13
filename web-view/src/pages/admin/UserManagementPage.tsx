@@ -11,12 +11,15 @@ import {
   X,
   User,
   AlertCircle,
+  UserPlus,
+  RefreshCw,
 } from "lucide-react";
 import { getAllUsers, updateUser, deleteUser } from "../../api/userAPI";
 import type {
   UserType,
   UpdateUserPayload,
 } from "../../../../sharedTypes/userTypes";
+import AddUserDialog from "./AddUserDialog";
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<UserType[]>([]);
@@ -26,6 +29,8 @@ export default function UserManagementPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<UpdateUserPayload>({});
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
 
   async function loadUsers() {
     try {
@@ -129,6 +134,25 @@ export default function UserManagementPage() {
               {filtered.length} {filtered.length === 1 ? "User" : "Users"}
             </span>
           )}
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={loadUsers}
+              disabled={loading}
+              title="Refresh"
+              className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setAddUserDialogOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br text-white text-sm font-medium rounded-full transition-colors"
+            >
+              <UserPlus size={15} />
+              Add User
+            </button>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -341,6 +365,12 @@ export default function UserManagementPage() {
           )}
         </div>
       </main>
+      {addUserDialogOpen && (
+        <AddUserDialog
+          onClose={() => setAddUserDialogOpen(false)}
+          onCreated={(created) => setUsers((prev) => [...prev, created])}
+        />
+      )}
     </div>
   );
 }
