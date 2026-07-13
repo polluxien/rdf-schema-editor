@@ -4,7 +4,9 @@ import {
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
+  type Connection,
   type Edge,
+  type IsValidConnection,
   type Node,
   type NodeTypes,
   type OnConnect,
@@ -70,8 +72,17 @@ export default function OntologyCanvas() {
   const onNodesChange = useCallback(
     (changes: Parameters<typeof applyNodeChanges>[0]) => {
       setFlowNodes((nds) => applyNodeChanges(changes, nds));
+      // React Flow's built-in keyboard deletion (select + Backspace) goes
+      // through here directly rather than the context-menu deleteNode path,
+      // so mapping cleanup has to happen here too or a removed node leaves
+      // a stale mapping behind.
+      for (const change of changes) {
+        if (change.type === "remove") {
+          removeMappingsForNode(change.id);
+        }
+      }
     },
-    [setFlowNodes],
+    [setFlowNodes, removeMappingsForNode],
   );
 
   const addNodesToCanvas = (newNode: Node) => {
@@ -109,10 +120,28 @@ export default function OntologyCanvas() {
     [setFlowEdges],
   );
 
+  // Both node types render a source AND a target handle, so a connection
+  // dragged the "wrong way" (class -> column, or column -> column) would
+  // otherwise still produce an edge whose source/target ids don't actually
+  // mean what onConnect assumes below. Only column -> class is a valid
+  // mapping.
+  const isValidConnection: IsValidConnection = useCallback(
+    (connection: Edge | Connection) =>
+      Boolean(connection.source?.startsWith("column-")) &&
+      Boolean(connection.target?.startsWith("class-")),
+    [],
+  );
+
   const onConnect: OnConnect = useCallback(
     (params) => {
-      const sourceId = params.source?.replace("column-", "") || "";
-      const targetId = params.target?.replace("class-", "") || "";
+      if (
+        !params.source?.startsWith("column-") ||
+        !params.target?.startsWith("class-")
+      ) {
+        return;
+      }
+      const sourceId = params.source.replace("column-", "");
+      const targetId = params.target.replace("class-", "");
       if (!sourceId || !targetId) return;
 
       const mappingId = crypto.randomUUID();
@@ -247,6 +276,7 @@ export default function OntologyCanvas() {
             */
           onEdgeClick={(_, edge) => handleEdgeClick(edge.id)}
           onConnect={onConnect}
+          isValidConnection={isValidConnection}
           nodeTypes={nodeTypes}
           //Context menu handling: open custom menu on right-click, close on any click or move
           onNodeContextMenu={(event, node) => {

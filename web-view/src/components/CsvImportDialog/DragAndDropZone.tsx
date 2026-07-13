@@ -135,15 +135,6 @@ function DragAndDropZone({ showDragAndDropZone }: DragAndDropZoneProps) {
               <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
                 CSV
               </span>
-              <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-                RDF
-              </span>
-              <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-                Turtel
-              </span>
-              <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-                JSON-LD
-              </span>
             </div>
           </div>
         </div>

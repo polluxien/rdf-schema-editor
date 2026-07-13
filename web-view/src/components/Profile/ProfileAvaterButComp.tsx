@@ -26,7 +26,18 @@ function ProfileAvatarButton() {
     setShowLoginDialog(false);
   };
 
-  useEffect(() => {}, [loginInfo]);
+  // Close the dropdown when clicking outside of it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
 
   const deligateClick = () => {
     if (loginInfo) {

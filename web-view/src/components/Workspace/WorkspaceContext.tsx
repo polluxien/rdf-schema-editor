@@ -9,6 +9,7 @@ import type { Workspace, WorkspaceData } from "../../types/workspace";
 import { EMPTY_WORKSPACE_DATA } from "../../types/workspace";
 import {
   createWorkspace as createRemoteWorkspace,
+  deleteWorkspace as deleteRemoteWorkspace,
   getWorkspace as getRemoteWorkspace,
   getWorkspaces as getRemoteWorkspaces,
   updateWorkspace as updateRemoteWorkspace,
@@ -40,6 +41,11 @@ export interface WorkspaceContextType {
   savingWorkspaceId: string | null;
   saveError: string | null;
   clearSaveError: () => void;
+  /** permanently deletes the workspace (and its account-side copy, if saved) */
+  deleteWorkspace: (id: string) => Promise<void>;
+  deletingWorkspaceId: string | null;
+  deleteError: string | null;
+  clearDeleteError: () => void;
   /** true while the account's saved workspaces are being fetched after login/refresh */
   isLoadingWorkspaces: boolean;
 }
@@ -74,14 +80,20 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     null,
   );
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [deletingWorkspaceId, setDeletingWorkspaceId] = useState<
+    string | null
+  >(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isLoadingWorkspaces, setIsLoadingWorkspaces] = useState(false);
   // tracks which account's workspaces are currently loaded, so we reload on
   // user switch and reset on logout without refetching on every render
   const loadedForUserId = useRef<string | null>(null);
+  // debounce timers for the local IndexedDB cache write, keyed by workspace id
+  const cacheDebounceTimers = useRef<Record<string, number>>({});
 
-  // ontology/dataset aren't sent to the backend on save (see saveWorkspace
-  // below), so a plain page refresh would lose them unless they're restored
-  // from the local IndexedDB cache here
+  // ontology/dataset/mappings/flowNodes/flowEdges aren't sent to the backend
+  // on save (see saveWorkspace below), so a plain page refresh would lose
+  // them unless they're restored from the local IndexedDB cache here
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -93,6 +105,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           ...(prev[DEFAULT_WORKSPACES[0].id] ?? EMPTY_WORKSPACE_DATA),
           ontology: cached.ontology,
           dataset: cached.dataset,
+          mappings: cached.mappings ?? [],
+          flowNodes: cached.flowNodes ?? [],
+          flowEdges: cached.flowEdges ?? [],
         },
       }));
     })();
@@ -153,12 +168,18 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           // ontology/dataset no longer come from the backend response (they
           // aren't saved there) - restore them from the local cache instead;
           // if this browser never imported/cached them, they stay null and
-          // have to be re-imported
+          // have to be re-imported. mappings/flowNodes/flowEdges prefer the
+          // local cache too, since it reflects edits made since the last
+          // explicit "save workspace" - falling back to the last saved
+          // version from the backend otherwise.
           const cached = await getCachedWorkspaceAssets(workspace.id);
           nextWorkspaceData[workspace.id] = {
             ...workspace.data,
             ontology: cached?.ontology ?? workspace.data.ontology,
             dataset: cached?.dataset ?? workspace.data.dataset,
+            mappings: cached?.mappings ?? workspace.data.mappings,
+            flowNodes: cached?.flowNodes ?? workspace.data.flowNodes,
+            flowEdges: cached?.flowEdges ?? workspace.data.flowEdges,
           };
         }
 
@@ -190,17 +211,33 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setWorkspaceData((prev) => {
       const prevData = prev[id] ?? EMPTY_WORKSPACE_DATA;
       const nextData = updater(prevData);
-      // ontology/dataset are write-once/read-many (set on import, otherwise
-      // just read) - only touch the cache when they actually changed, not on
-      // every mapping/flow-node edit
+      const assets = {
+        ontology: nextData.ontology,
+        dataset: nextData.dataset,
+        mappings: nextData.mappings,
+        flowNodes: nextData.flowNodes,
+        flowEdges: nextData.flowEdges,
+      };
+
       if (
         nextData.ontology !== prevData.ontology ||
         nextData.dataset !== prevData.dataset
       ) {
-        void setCachedWorkspaceAssets(id, {
-          ontology: nextData.ontology,
-          dataset: nextData.dataset,
-        });
+        // ontology/dataset changes are rare (import) - persist immediately
+        window.clearTimeout(cacheDebounceTimers.current[id]);
+        void setCachedWorkspaceAssets(id, assets);
+      } else if (
+        nextData.mappings !== prevData.mappings ||
+        nextData.flowNodes !== prevData.flowNodes ||
+        nextData.flowEdges !== prevData.flowEdges
+      ) {
+        // mapping/flow-node edits (e.g. dragging a node) can fire in rapid
+        // succession - debounce so this doesn't hit IndexedDB on every
+        // pointer move
+        window.clearTimeout(cacheDebounceTimers.current[id]);
+        cacheDebounceTimers.current[id] = window.setTimeout(() => {
+          void setCachedWorkspaceAssets(id, assets);
+        }, 500);
       }
       return { ...prev, [id]: nextData };
     });
@@ -233,6 +270,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         delete next[id];
         return next;
       });
+      window.clearTimeout(cacheDebounceTimers.current[id]);
+      delete cacheDebounceTimers.current[id];
       void deleteCachedWorkspaceAssets(id);
 
       if (activeWorkspaceId === id) {
@@ -308,6 +347,45 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const clearSaveError = () => setSaveError(null);
 
+  const deleteWorkspace = async (id: string) => {
+    const workspace = workspaces.find((w) => w.id === id);
+    if (!workspace || workspaces.length <= 1) return;
+
+    setDeletingWorkspaceId(id);
+    setDeleteError(null);
+    try {
+      if (workspace.remoteId) {
+        await deleteRemoteWorkspace(workspace.remoteId);
+      }
+
+      window.clearTimeout(cacheDebounceTimers.current[id]);
+      delete cacheDebounceTimers.current[id];
+      void deleteCachedWorkspaceAssets(id);
+
+      setWorkspaces((prev) => {
+        const remaining = prev.filter((w) => w.id !== id);
+        if (activeWorkspaceId === id) {
+          setActiveWorkspaceId(remaining[0]?.id ?? null);
+        }
+        return remaining;
+      });
+      setWorkspaceData((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete workspace",
+      );
+      throw err;
+    } finally {
+      setDeletingWorkspaceId(null);
+    }
+  };
+
+  const clearDeleteError = () => setDeleteError(null);
+
   return (
     <WorkspaceContext.Provider
       value={{
@@ -326,6 +404,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         savingWorkspaceId,
         saveError,
         clearSaveError,
+        deleteWorkspace,
+        deletingWorkspaceId,
+        deleteError,
+        clearDeleteError,
         isLoadingWorkspaces,
       }}
     >

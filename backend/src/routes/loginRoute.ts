@@ -1,5 +1,6 @@
 import express from "express";
 import { body, validationResult } from "express-validator";
+import { JsonWebTokenError } from "jsonwebtoken";
 import { verifyJWT, verifyPasswordAndCreateJWT } from "@/services/JWTServices";
 import { optionalAuthentication } from "./authentification";
 
@@ -61,8 +62,12 @@ loginRouter.get("/", optionalAuthentication, async (req, res, next) => {
     }
 
     //token verifiyd
-    const loginResourceBack = verifyJWT(token);
-    if (!loginResourceBack) {
+    try {
+      const loginResourceBack = verifyJWT(token);
+      return res.status(200).json(loginResourceBack);
+    } catch (err) {
+      if (!(err instanceof JsonWebTokenError)) throw err;
+      // invalid/expired token -> clear the stale cookie and report logged-out
       res.clearCookie("access_token", {
         httpOnly: true,
         secure: useSecureCookie,
@@ -70,7 +75,6 @@ loginRouter.get("/", optionalAuthentication, async (req, res, next) => {
       });
       return res.status(200).json(false);
     }
-    return res.status(200).json(loginResourceBack);
   } catch (err) {
     next(err);
   }

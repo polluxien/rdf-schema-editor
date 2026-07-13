@@ -10,6 +10,7 @@ import type { Dataset, Mapping, Ontology } from "../types";
 import { useWorkspace } from "../hooks/useWorkspace";
 import { AppContext } from "./AppContextType";
 import { loadMockData } from "../lib/useMock";
+import { getRemovedClassMappings, getRemovedColumnMappings } from "../lib/relationshipDiff";
 
 const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === "true";
 const COLOR_MODE_STORAGE_KEY = "colorMode";
@@ -56,19 +57,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [activeWorkspaceId, updateWorkspaceData],
   );
 
+  // Re-importing an ontology/dataset shouldn't blow away every relationship
+  // on the canvas: a class/column that's still present (same id) after the
+  // (re-)import keeps its node and mappings - its attributes are refreshed in
+  // place - only classes/columns that genuinely disappeared take their node,
+  // edges and mappings down with them.
   const setOntology = useCallback(
     (ontology: Ontology | null) =>
       patch((prev) => {
+        const classesById = new Map(
+          (ontology?.classes ?? []).map((cls) => [cls.id, cls]),
+        );
         const removedClassNodeIds = new Set(
           prev.flowNodes
-            .filter((node) => node.id.startsWith("class-"))
+            .filter(
+              (node) =>
+                node.id.startsWith("class-") &&
+                !classesById.has(node.id.replace("class-", "")),
+            )
             .map((node) => node.id),
+        );
+
+        const removedMappingIds = new Set(
+          getRemovedClassMappings(prev.mappings, ontology).map((m) => m.id),
         );
 
         return {
           ontology,
-          mappings: [],
-          flowNodes: prev.flowNodes.filter((node) => !removedClassNodeIds.has(node.id)),
+          mappings: prev.mappings.filter((m) => !removedMappingIds.has(m.id)),
+          flowNodes: prev.flowNodes
+            .filter((node) => !removedClassNodeIds.has(node.id))
+            .map((node) => {
+              if (!node.id.startsWith("class-")) return node;
+              const cls = classesById.get(node.id.replace("class-", ""));
+              if (!cls) return node;
+              return {
+                ...node,
+                data: { ...node.data, label: cls.label, uri: cls.uri, classData: cls },
+              };
+            }),
           flowEdges: prev.flowEdges.filter(
             (edge) =>
               !removedClassNodeIds.has(edge.source) &&
@@ -82,18 +109,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setDataset = useCallback(
     (dataset: Dataset | null) =>
       patch((prev) => {
+        const columnsById = new Map(
+          (dataset?.columns ?? []).map((column) => [column.id, column]),
+        );
         const removedColumnNodeIds = new Set(
           prev.flowNodes
-            .filter((node) => node.id.startsWith("column-"))
+            .filter(
+              (node) =>
+                node.id.startsWith("column-") &&
+                !columnsById.has(node.id.replace("column-", "")),
+            )
             .map((node) => node.id),
+        );
+
+        const removedMappingIds = new Set(
+          getRemovedColumnMappings(prev.mappings, dataset).map((m) => m.id),
         );
 
         return {
           dataset,
-          mappings: [],
-          flowNodes: prev.flowNodes.filter(
-            (node) => !removedColumnNodeIds.has(node.id),
-          ),
+          mappings: prev.mappings.filter((m) => !removedMappingIds.has(m.id)),
+          flowNodes: prev.flowNodes
+            .filter((node) => !removedColumnNodeIds.has(node.id))
+            .map((node) => {
+              if (!node.id.startsWith("column-")) return node;
+              const column = columnsById.get(node.id.replace("column-", ""));
+              if (!column) return node;
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  label: column.name,
+                  sampleValues: column.sampleValues,
+                  columnData: column,
+                },
+              };
+            }),
           flowEdges: prev.flowEdges.filter(
             (edge) =>
               !removedColumnNodeIds.has(edge.source) &&
