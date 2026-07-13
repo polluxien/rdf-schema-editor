@@ -1,25 +1,15 @@
 # Documentation for the Expert Schema Editor UI
 
+Code by: Bennet Worrmann, Erik Ostendorf, Matteo D'Urso (Sub-Team Lead). The Team Lead was Nick Labahn.
+For inquiries contact matteo.durso@fu-berlin.de, bennet.worrmann@fu-berlin.de or erik.ostendorf@fu-berlin.de.
+
+Parts of this technical documentation were written with AI assistance. The documentation was read by the development team and edited for accuracy, clarity, explanations from Ms. Karam and open features that weren't yet implemented. 
+
 ## Overview
 
 This document provides an overview of the Expert Schema Editor UI, a web application for creating and managing RDF schemas as requested in the software engineering project and described (briefly) by the Lastenheft. The application is built using React, TypeScript, and Tailwind CSS and is based on the semantic functionality of [Karma](https://usc-isi-i2.github.io/karma/).
-This documentation is meant to be a living document that will be updated as the project evolves and is divided into two major parts. (1) semantic and non-technical descriptions of the application and (2) technical documentation for developers.
 
-## (1) Non-Technical Description
-
-### Features
-
-- Create and manage RDF schemas
-- Import schemas from two sources: local files or the https://data.biodivportal.gfbio.org/ API
-- Export schemas as model or as RDF.
-- Visual representation of schema structure
-- Interactive schema editor with drag-and-drop functionality
-- User login and session management with JWT authentication
-- Workspace persistence to MongoDB database
-
-Note: functionality of this application, especially the export of models and rdf, goes hand-in-hand with WP8 and might therefore not be thoroughly documented here.
-
-## (2) Technical Description
+## Technical Description
 
 
 ### Application Entry Point
@@ -120,9 +110,10 @@ The central canvas state provider. It bridges the active workspace's `WorkspaceD
 - `setOntology` (`(Ontology \| null) => void`): Replaces ontology; clears mappings and removes class nodes/edges
 - `dataset` (`Dataset \| null`): Loaded CSV dataset with columns and rows
 - `setDataset` (`(Dataset \| null) => void`): Replaces dataset; clears mappings and removes column nodes/edges
-- `mappings` (`Mapping[]`): Column → class edges (each has optional `propertyId`)
+- `mappings` (`Mapping[]`): Column → class edges (each has optional `propertyId` and optional `transformation`)
 - `addMapping` (`(Mapping) => void`): Appends a mapping
 - `updateMappingProperty` (`(id, propertyId?) => void`): Sets/unsets the property on a mapping
+- `updateMappingTransformation` (`(id, transformation?) => void`): Sets/unsets a `LinearTransformation` on a mapping (see [Linear Transformations](#linear-transformations))
 - `removeMapping` (`(id) => void`): Removes a single mapping
 - `removeMappingsForNode` (`(nodeId) => void`): Removes all mappings/relations touching a node
 - `clearMappings` (`() => void`): Removes all mappings
@@ -383,6 +374,7 @@ A modal dialog for configuring a **class → column** mapping (i.e., assigning a
 - Info banner: explains that selecting the `uri` property makes the column the subject IRI; any other property maps it to a value
 - Selected property card (if any)
 - Search input with icon
+- **Linear Transformation** collapsible section (see below)
 - Scrollable property list (max 320px height)
 
 **Property collection (`getAvailableProperties`):**
@@ -397,6 +389,15 @@ A modal dialog for configuring a **class → column** mapping (i.e., assigning a
 **Property selection:** Each property button shows the label, full URI, type badge (Datatype / Annotation / Object), and domain/range chips. Clicking calls `handlePropertySelect(propertyId)` which:
 - If no mapping exists for this edge, creates one first
 - Calls `updateMappingProperty(mappingId, propertyId)`
+
+**Linear Transformation section:**
+A collapsible panel (teal `ArrowRightLeft` icon header) that lets the user attach a numeric unit conversion to the column value before it is written as an RDF literal.
+- **Dropdown:** 10 predefined unit conversions (Inches↔cm, Feet↔m, kg↔lb, °C↔°F, Miles↔km). Selecting one immediately persists the transformation via `updateMappingTransformation`.
+- **Custom…:** Reveals two number inputs — *Factor (a)* and *Offset (b)* — plus a live formula preview (`y = a × x + b`). An **Apply** button commits the values.
+- **Badge:** When a transformation is active, a teal badge in the section header shows the conversion name (predefined) or the factor/offset (custom).
+- **Remove transformation:** A small red link that clears the transformation (`updateMappingTransformation(id, undefined)`).
+
+The section re-syncs its local state from `mapping.transformation` via `useMemo` keyed to `mapping.id` so that switching edges always shows the correct saved state.
 
 **Footer actions:**
 - **Clear:** Removes the property assignment (`updateMappingProperty(id, undefined)`)
@@ -644,7 +645,11 @@ Dataset
 
 Mapping
 ├── id, sourceId (class), targetId (column)
-└── propertyId?: string
+├── propertyId?: string
+└── transformation?: LinearTransformation
+    ├── label?: string
+    ├── factor: number
+    └── offset: number
 
 ClassRelation
 ├── id, sourceClassId, targetClassId
@@ -686,6 +691,8 @@ Defines standard namespaces (`rdf`, `rdfs`, `owl`, `xsd`) and the `STANDARD_PROP
 - `owl:sameAs` (object)
 
 The `URI_PROPERTY` constant (`rdf:type` with label "uri") is used by the `RelationshipDialog` and the export pipeline to identify which column serves as the subject IRI for a class.
+
+Also defines constants for the custom linear-transformation FnO function (see [Linear Transformations](#linear-transformations)): `EX_NS`, `LINEAR_TRANSFORM_FN`, `LINEAR_TRANSFORM_IN`, `LINEAR_TRANSFORM_FAC`, `LINEAR_TRANSFORM_OFF` — all under the `http://example.org/function#` namespace.
 
 ### Styling
 
@@ -876,6 +883,23 @@ For each non-`uri` mapping from a column to a class, the property type decides t
 | `annotation` | Plain literal (`rml:reference`, no termType) |
 | `datatype` | Typed literal with `xsd:…` datatype |
 | `object` | IRI reference (`rml:reference` + `termType: iri`) |
+
+**Linear transformation wrapping:** If the `Mapping` carries a `transformation: LinearTransformation` (see [Linear Transformations](#linear-transformations)), `buildObjectFromProperty` delegates to `buildLinearTransformValue`, which wraps the plain `rml:reference` in a `FunctionCall` value expression:
+
+```
+ValueExpression { kind: "function", fn:
+  FunctionCall {
+    fn: "ex1:linearTransform",           // ex: prefix from EX_NS in rdfVocabulary.ts
+    parameters: [
+      { parameter: "ex1:inputValue",  value: { kind: "reference", column: "<ColumnName>" } },
+      { parameter: "ex1:factor",      value: { kind: "constant",  value: "<factor>" } },
+      { parameter: "ex1:offset",      value: { kind: "constant",  value: "<offset>" } },
+    ]
+  }
+}
+```
+
+The `PrefixRegistry` automatically assigns the `ex1:` prefix (or `ex:` if not already taken) to the `http://example.org/function#` namespace when it first encounters one of these URIs. All downstream stages (`toYarrrml`, `yarrrmlToRml`) handle `function`-kind `ValueExpression` values natively — no changes were needed there.
 
 #### Class → class relations
 
@@ -1144,6 +1168,93 @@ _:MeasuredValue_1.5_obs002 a oboe:MeasuredValue ; oboe:hasCode "1.5" .
 | `src/lib/yarrrmlToRml.test.ts` | Integration tests for stage 3 |
 | `test/mapping.rml.ttl` | Example output generated by this system |
 | `test/plant_height_vegetative_raw-model_oboe.ttl` | Reference Karma R2RML model for the same dataset |
+
+---
+
+### Linear Transformations
+
+Linear transformations let a user attach a numeric unit conversion to any **class → column** mapping edge so that the column value is converted before it is written as an RDF literal. The conversion formula is:
+
+```
+output = factor × input + offset
+```
+
+#### Data model
+
+`LinearTransformation` is defined in `src/types/index.ts` and is an optional field on `Mapping`:
+
+```typescript
+export interface LinearTransformation {
+  label?: string;   // Human-readable name, e.g. "Inches → cm". undefined = custom.
+  factor: number;   // Multiplicative coefficient (a)
+  offset: number;   // Additive offset (b)
+}
+
+export interface Mapping {
+  id: string;
+  sourceId: string;     // ontology class ID
+  targetId: string;     // dataset column ID
+  propertyId?: string;
+  transformation?: LinearTransformation;  // optional
+}
+```
+
+#### UI
+
+The `RelationshipDialog` exposes a collapsible **"Linear Transformation"** section (teal `ArrowRightLeft` icon) below the search box:
+
+- A `<select>` dropdown with 10 predefined unit conversions (Inches↔cm, Feet↔m, kg↔lb, °C↔°F, Miles↔km). Selecting one immediately calls `updateMappingTransformation`.
+- A **Custom…** option that reveals *Factor* and *Offset* number inputs plus a live formula preview. An **Apply** button commits the values.
+- A teal badge in the section header shows the active conversion name (predefined) or `×<factor> +<offset>` (custom).
+- A **Remove transformation** link clears the transformation from the mapping.
+
+The local dialog state is re-synced from `mapping.transformation` via `useMemo` keyed to `mapping.id` whenever the user switches to a different edge.
+
+#### Context actions
+
+`AppContext` exposes `updateMappingTransformation(mappingId, transformation?)`, implemented in `AppContext.tsx` with the same `patch()` pattern used by all other mapping mutations.
+
+#### Export pipeline integration
+
+When `canvasToModel` processes a mapping that has a `transformation`, it calls `buildLinearTransformValue` (in `canvasToModel.ts`), which produces a `FunctionCall` `ValueExpression` using the following FnO-style custom function:
+
+| Constant | Value |
+|---|---|
+| `EX_NS` | `http://example.org/function#` |
+| `LINEAR_TRANSFORM_FN` | `http://example.org/function#linearTransform` |
+| `LINEAR_TRANSFORM_IN` | `http://example.org/function#inputValue` |
+| `LINEAR_TRANSFORM_FAC` | `http://example.org/function#factor` |
+| `LINEAR_TRANSFORM_OFF` | `http://example.org/function#offset` |
+
+These are defined in `src/lib/rdfVocabulary.ts`. The resulting YARRRML output looks like:
+
+```yaml
+Measurement:
+  sources:
+    - ['plants.csv~csv']
+  s: http://example.org/$(MeasID)
+  po:
+    - [a, ns1:Measurement]
+    - predicates: ns1:value
+      objects:
+        - function: ex1:linearTransform
+          parameters:
+            - [ex1:inputValue, $(petalLengthInch)]
+            - [ex1:factor, 2.54]
+            - [ex1:offset, 0]
+          datatype: xsd:double
+```
+
+The `function`-kind `ValueExpression` path in `yarrrml.ts` (`functionLines`) handles this without any modifications.
+
+**Important:** The `ex:linearTransform` function is a **custom FnO function**. For the exported RML to produce transformed values, the downstream RML processor must implement this function. If a specific processor is targeted (e.g. Morph-KGC), the function URI and parameter names in `rdfVocabulary.ts` should be updated to match that processor's function library.
+
+#### Tests
+
+Three new test cases were added to `src/lib/canvasToModel.test.ts` under `"canvasToModel — linear transformation"`:
+1. Verifies that a mapping with a `transformation` produces a `FunctionCall` value with the correct `fn`, `inputValue`, `factor`, and `offset` parameters.
+2. Verifies that the YARRRML serialization contains `function:`, `linearTransform`, `inputValue`, the column reference, and the factor value.
+3. Verifies that a mapping *without* a transformation still produces a plain `reference` value expression.
 
 ## Development
 
