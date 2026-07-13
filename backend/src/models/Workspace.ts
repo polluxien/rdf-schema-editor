@@ -1,8 +1,11 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+// `dataset` (the imported CSV, potentially many rows) lives in its own
+// collection (see WorkspaceDataset.ts) instead of embedded here. A single
+// Mongo document is capped at 16MB (BSON limit); embedding the full dataset
+// alongside ontology/mappings/flow layout made that limit easy to hit.
 export interface IWorkspaceData {
   ontology: Record<string, unknown> | null;
-  dataset: Record<string, unknown> | null;
   mappings: Record<string, unknown>[];
   flowNodes: Record<string, unknown>[];
   flowEdges: Record<string, unknown>[];
@@ -21,10 +24,9 @@ export interface IWorkspace extends Document {
 const WorkspaceDataSchema = new Schema<IWorkspaceData>(
   {
     ontology: { type: Schema.Types.Mixed, default: null },
-    dataset: { type: Schema.Types.Mixed, default: null },
-    mappings: { type: [Schema.Types.Mixed], default: [] },
-    flowNodes: { type: [Schema.Types.Mixed], default: [] },
-    flowEdges: { type: [Schema.Types.Mixed], default: [] },
+    mappings: { type: Schema.Types.Mixed, default: [] },
+    flowNodes: { type: Schema.Types.Mixed, default: [] },
+    flowEdges: { type: Schema.Types.Mixed, default: [] },
   },
   { _id: false }
 );
@@ -51,7 +53,6 @@ const WorkspaceSchema = new Schema<IWorkspace>(
       type: WorkspaceDataSchema,
       default: () => ({
         ontology: null,
-        dataset: null,
         mappings: [],
         flowNodes: [],
         flowEdges: [],

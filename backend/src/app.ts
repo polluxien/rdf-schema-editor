@@ -12,7 +12,7 @@ const app = express();
 configureCORS(app);
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: "100mb" }));
 app.use(cookieParser());
 
 // HTTP request logger
@@ -23,8 +23,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     const level = res.statusCode >= 500 ? "ERROR"
                 : res.statusCode >= 400 ? "WARN"
                 : "INFO";
+    // originalUrl (not req.path): Express strips the mount-point prefix from
+    // req.url while inside a sub-router and only restores it when next() is
+    // called, which never happens once a handler responds directly — path
+    // would otherwise log as e.g. "/<id>" instead of "/api/workspaces/<id>"
     logger[level === "INFO" ? "info" : level === "WARN" ? "warn" : "error"](
-      `${req.method} ${req.path} → ${res.statusCode} (${ms}ms)`,
+      `${req.method} ${req.originalUrl} → ${res.statusCode} (${ms}ms)`,
     );
   });
   next();
@@ -37,14 +41,18 @@ app.get("/api/healthy", (_req, res) => {
 
 // Routes
 app.use("/api/login", loginRouter);
-app.use("/api/users", userRouter);       // war: /api/user  (Tippfehler)
-app.use("/api/workspace", workspaceRouter);
+app.use("/api/users", userRouter);  
+app.use("/api/workspaces", workspaceRouter);
 
 // Global error handler
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   const message = err instanceof Error ? err.message : "Internal server error";
-  logger.error("Unhandled error in request", { message });
-  res.status(500).json({ error: message });
+  const status =
+    (err as { status?: number; statusCode?: number })?.status ??
+    (err as { status?: number; statusCode?: number })?.statusCode ??
+    500;
+  logger.error("Unhandled error in request", { message, status });
+  res.status(status).json({ error: message });
 });
 
 export default app;

@@ -1,12 +1,34 @@
 import { useRef, useState } from "react";
+import { Check, Cloud, Loader2 } from "lucide-react";
 import { useFileImport } from "../FileImport/FileImportContext";
+import { useWorkspace } from "../../hooks/useWorkspace";
+import { useLoginContext } from "../../api/LoginInfo";
 import OwlImportDialog from "../OwlImportDialog";
+import WorkspaceSaveErrorToast from "./WorkspaceSaveErrorToast";
 
 export default function WorkspaceImportExport() {
   const { importFiles, importOntologyFromContent } = useFileImport();
+  const { loginInfo } = useLoginContext();
+  const { activeWorkspaceId, activeWorkspace, saveWorkspace, savingWorkspaceId } =
+    useWorkspace();
   const csvInputRef = useRef<HTMLInputElement>(null);
   const owlInputRef = useRef<HTMLInputElement>(null);
   const [owlDialogOpen, setOwlDialogOpen] = useState(false);
+  const [justSavedId, setJustSavedId] = useState<string | null>(null);
+
+  const isSaving = savingWorkspaceId === activeWorkspaceId;
+  const isLoggedIn = Boolean(loginInfo);
+
+  const handleSave = async () => {
+    if (!activeWorkspaceId) return;
+    try {
+      await saveWorkspace(activeWorkspaceId);
+      setJustSavedId(activeWorkspaceId);
+      setTimeout(() => setJustSavedId(null), 2000);
+    } catch {
+      // saveError from context already reflects the failure
+    }
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -57,6 +79,34 @@ export default function WorkspaceImportExport() {
       <button type="button" onClick={handleExportTtl} className={actionClass}>
         ttl
       </button>
+
+      {isLoggedIn && (
+        <>
+          <span className="text-gray-300 dark:text-gray-700">|</span>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving || !activeWorkspaceId}
+            title={
+              activeWorkspace?.savedAt
+                ? `Zuletzt gespeichert: ${new Date(activeWorkspace.savedAt).toLocaleString("de-DE")}`
+                : "Aktuellen Workspace im Account speichern"
+            }
+            className={`flex items-center gap-1 ${actionClass}`}
+          >
+            {isSaving ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : justSavedId === activeWorkspaceId ? (
+              <Check size={12} />
+            ) : (
+              <Cloud size={12} />
+            )}
+            save
+          </button>
+        </>
+      )}
+
+      <WorkspaceSaveErrorToast />
 
       <input
         ref={csvInputRef}

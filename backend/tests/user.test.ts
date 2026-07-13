@@ -132,8 +132,8 @@ describe("deleteUser", () => {
   });
 
   test("deletes only the targeted user", async () => {
-    const a = await createUser(validUser({ email: "a@example.com" }));
-    const b = await createUser(validUser({ email: "b@example.com" }));
+    const a = await createUser(validUser({ name: "Alice", email: "a@example.com" }));
+    const b = await createUser(validUser({ name: "Bob", email: "b@example.com" }));
 
     await deleteUser(a._id.toString());
 

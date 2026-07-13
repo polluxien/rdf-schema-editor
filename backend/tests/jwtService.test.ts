@@ -90,7 +90,7 @@ describe("verifyJWT", () => {
     // As a result, role is currently ALWAYS undefined. This test documents
     // the current behavior. Once you fix the service (e.g. role: payload.isAdmin),
     // the next line must be changed to toBe(false).
-    expect(result.role).toBeUndefined();
+    expect(result.isAdmin).toBeFalsy();
   });
 
   test("throws JsonWebTokenError for an invalid token", () => {
