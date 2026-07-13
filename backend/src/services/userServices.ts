@@ -42,7 +42,7 @@ export async function getAllUsers(): Promise<UserType[]> {
 
 export async function updateUser(
   id: string,
-  data: Partial<UserType>,
+  data: Partial<UserType> & { password?: string },
 ): Promise<UserType> {
   if (
     data.name &&
@@ -51,15 +51,23 @@ export async function updateUser(
     throw new Error("Name allready in use");
   }
 
-  if (data.email && (await User.findOne({ email: data.email }))) {
+  if (
+    data.email &&
+    (await User.findOne({ email: data.email, _id: { $ne: id } }))
+  ) {
     throw new Error("Email allready in use");
   }
-  // * richtiger position zuweisen an Attributen, das nicht ganzer user geschickt werden muss
 
-  const user = await User.findByIdAndUpdate(id, data, { new: true });
+  const user = await User.findById(id);
   if (!user) {
     throw new Error("User could not be found");
   }
+
+  // assigned via the document (not findByIdAndUpdate) so the pre("save")
+  // hook re-hashes the password when it's part of the update
+  Object.assign(user, data);
+  await user.save();
+
   return toUserResponse([user])[0];
 }
 

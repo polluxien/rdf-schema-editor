@@ -10,6 +10,7 @@ import {
   getCurrentUser,
   updateUser,
 } from "@/services/userServices";
+import { Gender } from "@/models/User";
 
 export const userRouter = express.Router();
 
@@ -76,6 +77,7 @@ userRouter.put(
   body("name").optional().isString().isLength({ min: 3, max: 100 }),
   body("email").optional().isEmail().normalizeEmail(),
   body("password").optional().isString().isLength({ min: 3, max: 100 }),
+  body("gender").optional().isIn(Object.values(Gender)),
   async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
