@@ -1,13 +1,15 @@
 import { User } from "@/models/User";
 
-//we will only return name and isAdmin for saftey reasons never password !!!!!
+// ? we will only return name and isAdmin for saftey reasons never password !!!!!
 export async function login(
-  name: string,
+  identifier: string,
   password: string,
 ): Promise<{ id: string; isAdmin: boolean } | false> {
- // * hier noch option name | email 
+  // * find either by name or email and check if password is correct
+  const user = await User.findOne({
+    $or: [{ name: identifier }, { email: identifier }],
+  });
 
-  const user = await User.findOne({ name: name }).exec();
   if (!user) return false;
   const isMatch = await user.isCorrectPassword(password);
   if (!isMatch) return false;

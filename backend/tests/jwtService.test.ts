@@ -77,6 +77,11 @@ describe("verifyPasswordAndCreateJWT", () => {
 });
 
 describe("verifyJWT", () => {
+  beforeEach(() => {
+    process.env.JWT_SECRET = "test-secret";
+    process.env.JWT_TTL = "300";
+  });
+
   test("decodes a valid token (round-trip)", async () => {
     mockedLogin.mockResolvedValue(DUMMY_USER as any);
     const token = await verifyPasswordAndCreateJWT("Harry", "password");

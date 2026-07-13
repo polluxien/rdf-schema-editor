@@ -81,12 +81,12 @@ export function LoginDialog({ open, onHide, required = false }: LoginDialogProps
           <div className="flex flex-col gap-4 mb-4">
             <label className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                Username
+                Username or Email
               </span>
               <input
                 type="text"
                 name="name"
-                placeholder="Johnny"
+                placeholder="Johnny or johnny@example.com"
                 value={loginData.name}
                 onChange={update}
                 required
