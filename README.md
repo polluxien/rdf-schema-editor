@@ -16,53 +16,67 @@ A browser-based tool that enables domain experts (biologists, data curators) to 
 
 ## Features
 
-- Load and browse target ontologies (Darwin Core, ABCD, etc.)
-- Import source fields via CSV header upload or manual entry
-- Map fields to ontology properties via drag & drop
-- Define transformation rules (string normalisation, unit conversion, conditional mappings) through guided forms
+- Load ontologies from a local OWL file or directly from the [BioDivPortal](https://data.biodivportal.gfbio.org/) API
+- Import source data via CSV upload
+- Map fields to ontology properties via an interactive drag & drop canvas ([React Flow](https://reactflow.dev/))
 - Live RDF triple preview on sample data
-- Export finalised mapping as JSON-LD or Turtle (compatible with RDF Matching Service)
+- User accounts with login/registration, JWT-based sessions, and an admin user-management area
+- Workspaces are persisted per user in MongoDB (auto-saved with debounce) and fall back to local-only state when logged out
 
 ---
 
 ## Tech Stack
 
-- **Framework**: React 18 + TypeScript
-- **Build Tool**: Vite
-- **State Management**: React Context API (`AppContext`, `WorkspaceContext`, `LoginContext`)
-- **Visualization**: React Flow (Canvas, Nodes, Edges)
-- **Styling**: Tailwind CSS + CSS Modules
-- **Testing**: ViTes/Jest + MockData (booting via Dev-Mode -> `.env-Variable`)
+**Frontend** (`web-view/`)
+- React 19 + TypeScript, built with Vite
+- React Context API for state (`AppContext`, `WorkspaceContext`, `LoginContext`)
+- `@xyflow/react` (React Flow) for the ontology canvas
+- Tailwind CSS
+- Vitest for tests
+
+**Backend** (`backend/`)
+- Express 5 + TypeScript, run with `tsx`
+- MongoDB via Mongoose
+- JWT auth (`jsonwebtoken`) stored in an HTTP-only cookie, passwords hashed with `bcryptjs`
+- Jest + `mongodb-memory-server` for tests
+
+**Shared** (`sharedTypes/`) — TypeScript types shared between frontend and backend (`UserType`, `WorkspaceType`, `LoginType`, ...)
 
 ---
 
-## Project Structure (*25.05.26*)
+## Project Structure
+
 ```
-├── src/
-│   ├── AppController.tsx          # Main app controller
-│   ├── backend/                   # API & authentication
-│   │   ├── api.ts                 
-│   │   ├── fetchWithErrorHandling.tsx
-│   │   └── LoginInfo.tsx
-│   ├── components/
-│   │   ├── CsvImportDialog/       # CSV import with drag & drop
-│   │   ├── DatasetTable/          # Dataset table view
-│   │   ├── OntologyCanvas/        # Visual ontology editor
-│   │   │   ├── Nodes/             # Class & column nodes
-│   │   │   ├── Relation/          # Edges & relationship
-│   │   │   └── AddObjectDialog/   # Add objects to interactiv canvas
-│   │   ├── Workspace/             # Workspace management & tabs
-│   │   ├── Profile/               # Login & profile display
-│   │   └── Fallback/              # Error boundaries
-│   ├── context/                   # Global app state (React Context)
-│   ├── hooks/                     # Custom hooks
-│   ├── lib/                       # CSV & OWL parsers + tests
-│   └── types/                     # TypeScript types
-├── mockData/                      # Mock files for dev Mode (CSV, OWL)
-├── docs/                          # Documentation... in the future
-├── Dockerfile
-├── docker-compose.yml
-└── vite.config.ts
+├── web-view/                      # Frontend (React + Vite)
+│   └── src/
+│       ├── AppController.tsx      # Main app controller
+│       ├── api/                   # Backend API clients (login, users, workspaces)
+│       ├── components/
+│       │   ├── CsvImportDialog/   # CSV import
+│       │   ├── OwlImportDialog/   # OWL import (local file or BioDivPortal API)
+│       │   ├── DatasetTable/      # Dataset table view
+│       │   ├── OntologyCanvas/    # Visual ontology editor (nodes, edges)
+│       │   ├── Workspace/         # Workspace management, tabs, save/import/export
+│       │   ├── Profile/           # Login dialog, profile, API key & user settings
+│       │   ├── Usermanagement/    # Admin user management UI
+│       │   ├── routing/           # Route guards (e.g. ProtectedAdminRoute)
+│       │   └── Fallback/          # Error boundaries
+│       ├── context/                # Global app state (React Context)
+│       ├── hooks/                  # Custom hooks
+│       ├── lib/                    # CSV/OWL parsers, RDF vocabulary, local cache
+│       ├── pages/                  # EditorPage, SettingsPage, admin pages
+│       └── types/                  # Frontend-only TypeScript types
+├── backend/                        # Backend (Express + MongoDB)
+│   └── src/
+│       ├── app.ts                  # Express app, middleware, routes
+│       ├── index.ts                # Entry point (DB connect + listen)
+│       ├── models/                 # Mongoose models (User, Workspace, WorkspaceDataset)
+│       ├── routes/                 # login, users, workspaces, auth middleware
+│       └── services/                # Business logic per route
+├── sharedTypes/                    # Types shared by frontend and backend
+├── doc/                             # Documentation
+├── docker-compose.yml               # frontend + backend + mongodb
+└── package.json                     # Root scripts (start/test both apps)
 ```
 
 ---
@@ -71,16 +85,31 @@ A browser-based tool that enables domain experts (biologists, data curators) to 
 
 ### Local Development
 
-Requires Node.js >= 20
+Requires Node.js >= 20 and a running MongoDB instance.
 
 ```bash
 git clone https://github.com/polluxien/rdf-schema-editor
 cd rdf-schema-editor
-npm install
-npm run dev
+
+# frontend + backend together
+npm run start
 ```
 
-App runs at `http://localhost:5173`
+Or run each side separately:
+
+```bash
+cd backend && npm install && npm run dev     # http://localhost:4000
+cd web-view && npm install && npm run dev    # http://localhost:5173
+```
+
+See [`backend/README.md`](backend/README.md) for backend environment variables.
+
+### Tests
+
+```bash
+npm run test:frontend
+npm run test:backend
+```
 
 ### Docker
 
@@ -88,7 +117,9 @@ App runs at `http://localhost:5173`
 docker-compose up --build
 ```
 
-App runs at `http://localhost:3000`
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:4000`
+- MongoDB: `localhost:27017`
 
 ---
 
@@ -96,7 +127,7 @@ App runs at `http://localhost:3000`
 
 - Source code (this repository)
 - `Dockerfile` + `docker-compose.yml`
-- `docs/user-manual.md`
+- `doc/DOCUMENTATION.md`
 - Usability test results & expert feedback (documented in final report)
 - UI design rationale (documented in final report)
 
@@ -106,4 +137,4 @@ App runs at `http://localhost:3000`
 
 Naouel Karam — karam@infai.org
 Jan Fillies — fillies@infai.org
-
+</content>
