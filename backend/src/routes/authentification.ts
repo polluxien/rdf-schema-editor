@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { JsonWebTokenError } from "jsonwebtoken";
 import { verifyJWT } from "@/services/JWTServices";
 
 declare global {
@@ -20,21 +21,21 @@ export function requiresAuthentication(
   req.userID = undefined;
   req.isAdmin = undefined;
 
+  const cookie = req.cookies?.access_token;
+  if (!cookie) {
+    return res.status(401).json({ error: "Unauthorized - Cookie" });
+  }
+
   try {
-    const cookie = req.cookies?.access_token;
-    if (!cookie) {
-      return res.status(401).json({ error: "Unauthorized - Cookie" });
-    }
-
     const resource = verifyJWT(cookie);
-    if (!resource) {
-      return res.status(401).json({ error: "Unauthorized - JWT" });
-    }
-
     req.userID = resource.id;
     req.isAdmin = resource.isAdmin;
     next();
   } catch (err) {
+    // an invalid/expired token is an auth failure (401), not a server error
+    if (err instanceof JsonWebTokenError) {
+      return res.status(401).json({ error: "Unauthorized - JWT" });
+    }
     next(err);
   }
 }
@@ -49,17 +50,19 @@ export function optionalAuthentication(
   req.userID = undefined;
   req.isAdmin = undefined;
 
-  try {
-    const cookie = req.cookies?.access_token;
-    if (cookie) {
+  const cookie = req.cookies?.access_token;
+  if (cookie) {
+    try {
       const resource = verifyJWT(cookie);
-      if (resource) {
-        req.userID = resource.id;
-        req.isAdmin = resource.isAdmin;
+      req.userID = resource.id;
+      req.isAdmin = resource.isAdmin;
+    } catch (err) {
+      // an invalid/expired token just means "continue as anonymous" here;
+      // only a genuinely unexpected error should hit the 500 handler
+      if (!(err instanceof JsonWebTokenError)) {
+        return next(err);
       }
     }
-    next();
-  } catch (err) {
-    next(err);
   }
+  next();
 }

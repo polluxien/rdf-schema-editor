@@ -23,32 +23,56 @@ function AppController() {
   const [userInfo, setUserInfo] = useState<UserType | undefined>(undefined);
 
   useEffect(() => {
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 3000);
+    let cancelled = false;
+    let currentController: AbortController | null = null;
 
-    const f = async () => {
+    // Returns true once the session state has been conclusively determined
+    // (logged in, logged out, or a real error) — false only for a timeout,
+    // so the caller can retry with more time instead of assuming logged-out.
+    const checkSession = async (timeoutMs: number): Promise<boolean> => {
+      const controller = new AbortController();
+      currentController = controller;
+      const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
       try {
-        let actLogin, profile;
-
         const response = await getLogin(controller.signal);
+        if (cancelled) return true;
         if (response) {
-          [actLogin, profile] = response;
+          const [actLogin, profile] = response;
+          setLoginInfo(actLogin);
+          setUserInfo(profile);
+        } else {
+          setLoginInfo(false);
+          setUserInfo(undefined);
         }
-        setLoginInfo(actLogin ?? false);
-        setUserInfo(profile);
+        return true;
       } catch (error) {
-        console.warn("Could not check login session:", error);
-        setLoginInfo(false);
-        setUserInfo(undefined);
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return false;
+        }
+        if (!cancelled) {
+          console.warn("Could not check login session:", error);
+          setLoginInfo(false);
+          setUserInfo(undefined);
+        }
+        return true;
       } finally {
         window.clearTimeout(timeout);
       }
     };
-    f();
+
+    (async () => {
+      // Fast attempt first; if it merely timed out (e.g. a cold backend),
+      // retry once with a much longer budget instead of forcing a logged-out
+      // state and re-prompting login for what may still be a valid session.
+      const settled = await checkSession(3000);
+      if (!settled && !cancelled) {
+        await checkSession(15000);
+      }
+    })();
 
     return () => {
-      window.clearTimeout(timeout);
-      controller.abort();
+      cancelled = true;
+      currentController?.abort();
     };
   }, []);
 

@@ -1,5 +1,7 @@
 import { User, IUser } from "@/models/User";
 import { UserType } from "../../../sharedTypes/userTypes";
+import { ConflictError, NotFoundError } from "@/errors";
+import { Workspace } from "@/models/Workspace";
 
 function toUserResponse(userData: IUser[]): UserType[] {
   return userData.map((user) => ({
@@ -16,11 +18,11 @@ function toUserResponse(userData: IUser[]): UserType[] {
 
 export async function createUser(data: Partial<UserType>): Promise<UserType> {
   if (await User.findOne({ name: data.name })) {
-    throw new Error("Name allready in use");
+    throw new ConflictError("Name allready in use");
   }
 
   if (await User.findOne({ email: data.email })) {
-    throw new Error("Email allready in use");
+    throw new ConflictError("Email allready in use");
   }
   const user = await User.create(data);
   return toUserResponse([user])[0];
@@ -31,7 +33,7 @@ export async function createUser(data: Partial<UserType>): Promise<UserType> {
 export async function getCurrentUser(id: string): Promise<UserType> {
   const user = await User.findById(id);
   if (!user) {
-    throw new Error("User could not be found");
+    throw new NotFoundError("User could not be found");
   }
   return toUserResponse([user])[0];
 }
@@ -48,19 +50,19 @@ export async function updateUser(
     data.name &&
     (await User.findOne({ name: data.name, _id: { $ne: id } }))
   ) {
-    throw new Error("Name allready in use");
+    throw new ConflictError("Name allready in use");
   }
 
   if (
     data.email &&
     (await User.findOne({ email: data.email, _id: { $ne: id } }))
   ) {
-    throw new Error("Email allready in use");
+    throw new ConflictError("Email allready in use");
   }
 
   const user = await User.findById(id);
   if (!user) {
-    throw new Error("User could not be found");
+    throw new NotFoundError("User could not be found");
   }
 
   // assigned via the document (not findByIdAndUpdate) so the pre("save")
@@ -73,12 +75,14 @@ export async function updateUser(
 
 export async function deleteUser(id: string): Promise<void> {
   const result = await User.findByIdAndDelete(id);
-  if (!result) throw new Error("User could not be found");
-  // * hier noch die jeweiligen Workspaces löschen
+  if (!result) throw new NotFoundError("User could not be found");
+  // * delete all workspaces of the user
+  await Workspace.deleteMany({ userId: id });
 }
 
 // ! only for unit-tests mock nononon
 export async function deleteAllUser(): Promise<void> {
   await User.deleteMany({});
-  // * hier noch die jeweiligen Workspaces löschen
+  // * delete all workspaces 
+  await Workspace.deleteMany({});
 }

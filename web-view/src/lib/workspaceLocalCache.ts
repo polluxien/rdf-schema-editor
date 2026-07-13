@@ -1,11 +1,9 @@
-import type { Dataset, Ontology } from "../types";
+import type { Edge, Node } from "@xyflow/react";
+import type { Dataset, Mapping, Ontology } from "../types";
 
-// ontology/dataset are no longer sent to the backend on every workspace save
-// (they can be arbitrarily large - a full imported CSV - and made saves
-// heavy), so they're cached here instead to survive a page refresh. This is
-// per-browser only: a workspace opened on a different browser/device (or
-// after this cache is cleared) comes back without ontology/dataset and has
-// to be re-imported.
+// mappings/flowNodes/flowEdges are cached here too so a plain page refresh
+// (without an explicit "save workspace" to the account) doesn't lose the
+// relationships drawn on the canvas.
 
 const DB_NAME = "rdf-schema-editor";
 const DB_VERSION = 1;
@@ -14,6 +12,9 @@ const STORE_NAME = "workspaceAssets";
 export interface CachedWorkspaceAssets {
   ontology: Ontology | null;
   dataset: Dataset | null;
+  mappings: Mapping[];
+  flowNodes: Node[];
+  flowEdges: Edge[];
 }
 
 function openDb(): Promise<IDBDatabase> {

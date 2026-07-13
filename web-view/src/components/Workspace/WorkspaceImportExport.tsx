@@ -1,40 +1,41 @@
 import { useRef, useState } from "react";
-import { Check, Cloud, Loader2 } from "lucide-react";
+import { Check, Cloud, Loader2, Trash2 } from "lucide-react";
 import { useFileImport } from "../FileImport/FileImportContext";
-<<<<<<< HEAD
 import { useAppContext } from "../../hooks/useAppContext";
-import { useWorkspace } from "../../hooks/useWorkspace";
-import OwlImportDialog from "../OwlImportDialog";
-import RmlExportDialog from "../RmlExportDialog";
-
-
-export default function WorkspaceImportExport() {
-  const { importFiles, importOntologyFromContent } = useFileImport();
-  const { ontology, dataset, baseIri, setBaseIri } = useAppContext();
-  const { updateWorkspaceData, activeWorkspaceId } = useWorkspace();
-=======
 import { useWorkspace } from "../../hooks/useWorkspace";
 import { useLoginContext } from "../../api/LoginInfo";
 import OwlImportDialog from "../OwlImportDialog";
+import RmlExportDialog from "../RmlExportDialog";
 import WorkspaceSaveErrorToast from "./WorkspaceSaveErrorToast";
 
 export default function WorkspaceImportExport() {
   const { importFiles, importOntologyFromContent } = useFileImport();
+  const { ontology, dataset, baseIri, setBaseIri } = useAppContext();
   const { loginInfo } = useLoginContext();
-  const { activeWorkspaceId, activeWorkspace, saveWorkspace, savingWorkspaceId } =
-    useWorkspace();
->>>>>>> 8342477 (save limit 100mb, fix save workspace rough, add unit tests, fix user tests, add shared worspace types, new component for user settings, add new workspace logic, add local cache for reloading page)
+  const {
+    workspaces,
+    updateWorkspaceData,
+    activeWorkspaceId,
+    activeWorkspace,
+    saveWorkspace,
+    savingWorkspaceId,
+    deleteWorkspace,
+    deletingWorkspaceId,
+    deleteError,
+    clearDeleteError,
+  } = useWorkspace();
   const csvInputRef = useRef<HTMLInputElement>(null);
   const owlInputRef = useRef<HTMLInputElement>(null);
   const rmlInputRef = useRef<HTMLInputElement>(null);
   const [owlDialogOpen, setOwlDialogOpen] = useState(false);
-<<<<<<< HEAD
   const [rmlDialogOpen, setRmlDialogOpen] = useState(false);
   const [importingRml, setImportingRml] = useState(false);
-=======
   const [justSavedId, setJustSavedId] = useState<string | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const isSaving = savingWorkspaceId === activeWorkspaceId;
+  const isDeleting = deletingWorkspaceId === activeWorkspaceId;
+  const canDelete = workspaces.length > 1 && !!activeWorkspaceId;
   const isLoggedIn = Boolean(loginInfo);
 
   const handleSave = async () => {
@@ -47,7 +48,16 @@ export default function WorkspaceImportExport() {
       // saveError from context already reflects the failure
     }
   };
->>>>>>> 8342477 (save limit 100mb, fix save workspace rough, add unit tests, fix user tests, add shared worspace types, new component for user settings, add new workspace logic, add local cache for reloading page)
+
+  const handleConfirmDelete = async () => {
+    if (!activeWorkspaceId) return;
+    try {
+      await deleteWorkspace(activeWorkspaceId);
+      setConfirmDeleteOpen(false);
+    } catch {
+      // deleteError from context already reflects the failure; keep dialog open
+    }
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -119,7 +129,6 @@ export default function WorkspaceImportExport() {
         (yarr)rml
       </button>
 
-<<<<<<< HEAD
       <span className="text-gray-300 dark:text-gray-700">|</span>
       <label className="flex items-center gap-1.5 text-gray-500 select-none dark:text-gray-600">
         base IRI
@@ -132,7 +141,7 @@ export default function WorkspaceImportExport() {
           className="w-48 rounded border border-gray-300 bg-white px-2 py-0.5 text-gray-900 outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200"
         />
       </label>
-=======
+
       {isLoggedIn && (
         <>
           <span className="text-gray-300 dark:text-gray-700">|</span>
@@ -156,11 +165,63 @@ export default function WorkspaceImportExport() {
             )}
             save
           </button>
+          <button
+            type="button"
+            onClick={() => setConfirmDeleteOpen(true)}
+            disabled={!canDelete}
+            title={
+              canDelete
+                ? "Workspace löschen"
+                : "Der letzte Workspace kann nicht gelöscht werden"
+            }
+            className={`flex items-center gap-1 ${actionClass} hover:text-red-600 dark:hover:text-red-400`}
+          >
+            <Trash2 size={12} />
+            delete
+          </button>
         </>
       )}
 
       <WorkspaceSaveErrorToast />
->>>>>>> 8342477 (save limit 100mb, fix save workspace rough, add unit tests, fix user tests, add shared worspace types, new component for user settings, add new workspace logic, add local cache for reloading page)
+
+      {confirmDeleteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-900">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              Workspace "{activeWorkspace?.name}" löschen?
+            </h2>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+              Are you sure to delete this workspace? This action cannot be undone.
+            </p>
+            {deleteError && (
+              <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                {deleteError}
+              </p>
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmDeleteOpen(false);
+                  clearDeleteError();
+                }}
+                className="rounded px-3 py-1.5 text-sm text-gray-600 transition-colors hover:text-gray-950 dark:text-gray-300 dark:hover:text-white"
+              >
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="flex items-center gap-1 rounded bg-red-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-red-500 disabled:opacity-50"
+              >
+                {isDeleting && <Loader2 size={12} className="animate-spin" />}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <input
         ref={csvInputRef}

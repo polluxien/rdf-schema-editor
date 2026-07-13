@@ -4,7 +4,9 @@ import {
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
+  type Connection,
   type Edge,
+  type IsValidConnection,
   type Node,
   type NodeTypes,
   type OnConnect,
@@ -74,8 +76,17 @@ export default function OntologyCanvas() {
   const onNodesChange = useCallback(
     (changes: Parameters<typeof applyNodeChanges>[0]) => {
       setFlowNodes((nds) => applyNodeChanges(changes, nds));
+      // React Flow's built-in keyboard deletion (select + Backspace) goes
+      // through here directly rather than the context-menu deleteNode path,
+      // so mapping cleanup has to happen here too or a removed node leaves
+      // a stale mapping behind.
+      for (const change of changes) {
+        if (change.type === "remove") {
+          removeMappingsForNode(change.id);
+        }
+      }
     },
-    [setFlowNodes],
+    [setFlowNodes, removeMappingsForNode],
   );
 
   const addNodesToCanvas = (newNode: Node) => {
@@ -112,6 +123,17 @@ export default function OntologyCanvas() {
       setFlowEdges((eds) => applyEdgeChanges(changes, eds));
     },
     [setFlowEdges],
+  );
+
+  // Column nodes only render a target handle, so a connection can only be
+  // dragged FROM a class node. Only class -> column (mapping) and
+  // class -> class (relationship) are valid; column -> anything is rejected.
+  const isValidConnection: IsValidConnection = useCallback(
+    (connection: Edge | Connection) =>
+      Boolean(connection.source?.startsWith("class-")) &&
+      (Boolean(connection.target?.startsWith("column-")) ||
+        Boolean(connection.target?.startsWith("class-"))),
+    [],
   );
 
   const onConnect: OnConnect = useCallback(
@@ -279,14 +301,7 @@ export default function OntologyCanvas() {
             */
           onEdgeClick={(_, edge) => handleEdgeClick(edge.id)}
           onConnect={onConnect}
-          isValidConnection={(connection) => {
-            const src = connection.source ?? "";
-            const tgt = connection.target ?? "";
-            return (
-              (src.startsWith("class-") && tgt.startsWith("class-")) ||
-              (src.startsWith("class-") && tgt.startsWith("column-"))
-            );
-          }}
+          isValidConnection={isValidConnection}
           nodeTypes={nodeTypes}
           //Context menu handling: open custom menu on right-click, close on any click or move
           onNodeContextMenu={(event, node) => {

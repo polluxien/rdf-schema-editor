@@ -126,13 +126,6 @@ function OntologyAddObjectDialog({
     return sortType === "BY_POSITION_END" ? items.reverse() : items;
   };
 
-  const createID = (label: unknown) => {
-    return (
-      // eslint-disable-next-line react-hooks/purity
-      (label as string).toLowerCase() + Math.random().toString(36).substr(2, 5)
-    );
-  };
-
   const hasData =
     viewMode === "column"
       ? dataset?.columns && dataset.columns.length > 0
@@ -266,7 +259,7 @@ function OntologyAddObjectDialog({
                 : (item as OntologyClass).label;
             return (
               <button
-                key={createID(label)}
+                key={item.id}
                 className={`w-full text-left text-gray-700 text-sm p-2 ${viewMode === "column" ? "hover:bg-blue-100 dark:hover:bg-blue-500" : "hover:bg-purple-100 dark:hover:bg-purple-700"} rounded cursor-pointer transition-colors dark:text-gray-300`}
                 onClick={() => handleAddObject(viewMode, item)}
               >
