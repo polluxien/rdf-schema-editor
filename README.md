@@ -87,6 +87,12 @@ Documentation can be found in `doc/DOCUMENTATION.md`.
 
 ## Getting Started
 
+Requires Node.js >= 20 and a running MongoDB instance.
+
+```bash
+git clone https://github.com/polluxien/rdf-schema-editor
+cd rdf-schema-editor
+```
 
 ### Docker Build (recommended)
 
@@ -102,21 +108,12 @@ docker-compose up --build
 
 ### Local Development
 
-Requires Node.js >= 20 and a running MongoDB instance.
-
-```bash
-git clone https://github.com/polluxien/rdf-schema-editor
-cd rdf-schema-editor
-
-# frontend + backend together
-npm run start
-```
-
 Or run each side separately:
 
 ```bash
-cd backend && npm install && npm run dev     # http://localhost:4000
-cd web-view && npm install && npm run dev    # http://localhost:5173
+npm run start
+npm run start:frontend
+npm run start:backend
 ```
 
 See [`backend/README.md`](backend/README.md) for backend environment variables.
