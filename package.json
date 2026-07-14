@@ -12,6 +12,7 @@
     "start:frontend": "cd web-view && npm install && npm run dev"
   },
   "devDependencies": {
+    "@types/n3": "^1.26.1",
     "concurrently": "^9.1.0"
   }
 }
