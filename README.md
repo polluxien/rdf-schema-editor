@@ -14,7 +14,7 @@ A browser-based tool that enables domain experts (biologists, data curators) to 
 
 # Documentation
 
-Documentation can be found in `doc/DOCUMENTATION.md`.
+Documentation can be found in `doc/DOCUMENTATION.md`. See [`QUICKSTART.md`](QUICKSTART.md) for the default admin login and how to set up real users.
 
 ---
 

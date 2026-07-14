@@ -36,7 +36,7 @@ services:
       CORS_ORIGIN: http://localhost:3000
       JWT_SECRET: schlüssel
       JWT_TTL: 300
-#     PREFILL_USERS: "true"
+      PREFILL_USERS: "true"
     ports:
       - "4000:4000"
     depends_on:
