@@ -9,6 +9,7 @@ describe("login tests", async () => {
   beforeEach(async () => {
     dummyUser = await User.create({
       name: "Harry",
+      email: "harry@example.com",
       password: "password",
       isAdmin: false,
     });

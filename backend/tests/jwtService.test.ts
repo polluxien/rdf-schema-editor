@@ -77,6 +77,12 @@ describe("verifyPasswordAndCreateJWT", () => {
 });
 
 describe("verifyJWT", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env.JWT_SECRET = "test-secret";
+    process.env.JWT_TTL = "300";
+  });
+
   test("decodes a valid token (round-trip)", async () => {
     mockedLogin.mockResolvedValue(DUMMY_USER as any);
     const token = await verifyPasswordAndCreateJWT("Harry", "password");
@@ -86,11 +92,7 @@ describe("verifyJWT", () => {
     expect(result.id).toBe(DUMMY_USER.id);
     expect(result.exp).toBeGreaterThan(Math.floor(Date.now() / 1000));
 
-    // WARNING / BUG: "isAdmin" is signed, but "payload.role" is read.
-    // As a result, role is currently ALWAYS undefined. This test documents
-    // the current behavior. Once you fix the service (e.g. role: payload.isAdmin),
-    // the next line must be changed to toBe(false).
-    expect(result.role).toBeUndefined();
+    expect(result.isAdmin).toBe(false);
   });
 
   test("throws JsonWebTokenError for an invalid token", () => {
