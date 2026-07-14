@@ -442,7 +442,7 @@ An empty-state overlay shown on the canvas when no ontology or dataset is loaded
 - A large dashed-border drop area with an upload icon
 - "Select File" button — triggers a hidden file input (`accept=".csv,.owl,.rdf,.xml"`)
 - "Import from API" button — opens the `OwlImportDialog`
-- Supported formats badges: OWL, CSV, RDF, Turtel, JSON-LD
+- Supported formats badges: OWL, CSV, RDF, Turtle
 - Drag-and-drop: files dropped on the zone are passed to `importFiles()`
 
 #### CsvImportDialog (`web-view/src/components/CsvImportDialog/CsvImportDialog.tsx`)
@@ -1157,9 +1157,97 @@ For the same dataset with 20 rows, everything is semantically identical. Many sy
 ### Prerequisites
 
 - Node.js >= 18
-- MongoDB (local or Docker)
+- Docker and Docker Compose (for the Docker-based setup)
+- MongoDB (local or Docker, for the manual setup)
 
-### Running the Application
+### Running with Docker Compose (recommended)
+
+The entire stack (frontend, backend, MongoDB) can be started with a single command from the project root:
+
+```bash
+docker compose up --build
+```
+
+| Service  | URL                       | Docker image   |
+|----------|---------------------------|----------------|
+| Frontend | http://localhost:3000     | `rse-frontend` |
+| Backend  | http://localhost:4000     | `rse-backend`  |
+| MongoDB  | mongodb://localhost:27017  | `mongo:7.0`    |
+
+#### Service overview
+
+The three services in `docker-compose.yml` start in a strict dependency order enforced by health checks:
+
+```
+mongodb  →  backend  →  frontend
+```
+
+1. **`mongodb`** starts first. It runs `mongo:7.0` with `--wiredTigerCacheSizeGB 0.25` to limit RAM usage. A health check polls `mongosh --eval "db.adminCommand('ping')"` every 10 s (up to 6 retries, 20 s start period). Data is persisted in the named volume `mongodb-data`.
+
+2. **`backend`** starts after MongoDB passes its health check (`condition: service_healthy`). It exposes the Express API on port `4000`. Its own health check calls `GET http://localhost:4000/api/healthy` via `wget` every 10 s (up to 5 retries, 15 s start period, max 5 restarts on failure).
+
+3. **`frontend`** starts after the backend passes its health check. It serves the compiled React application on port `3000`. It restarts on failure with no explicit retry limit.
+
+#### Environment variables
+
+**Backend** (`backend` service):
+
+| Variable       | Value                            | Description                                      |
+|----------------|----------------------------------|--------------------------------------------------|
+| `NODE_ENV`     | `production`                     | Node environment                                 |
+| `PORT`         | `4000`                           | Port the Express server listens on               |
+| `MONGODB_URI`  | `mongodb://mongodb:27017/rse`    | Connection string (uses the `mongodb` service name) |
+| `CORS_ORIGIN`  | `http://localhost:3000`          | Allowed CORS origin (must match frontend URL)    |
+| `JWT_SECRET`   | `schlüssel`                      | **Change this before any public deployment!**    |
+| `JWT_TTL`      | `300`                            | JWT lifetime in seconds                          |
+
+> **Note:** The `PREFILL_USERS` variable is commented out (`# PREFILL_USERS: "true"`). Uncomment it to pre-populate the database with a set of seed users on first startup.
+
+**Frontend** (`frontend` service):
+
+| Variable            | Value        | Description                                     |
+|---------------------|--------------|-------------------------------------------------|
+| `NODE_ENV`          | `production` | Node environment                                |
+| `VITE_REAL_FETCH`   | `"true"`     | Enables real HTTP calls to the backend API      |
+| `VITE_USE_MOCK_DATA`| `"false"`    | Disables mock data; uses live backend responses |
+
+#### Logging
+
+All services use the `json-file` log driver:
+
+| Service    | Max file size | Max files |
+|------------|--------------|-----------|
+| `frontend` | 5 MB         | 3         |
+| `backend`  | 10 MB        | 5         |
+| `mongodb`  | 10 MB        | 3         |
+
+#### Volume
+
+The named volume `mongodb-data` is mounted at `/data/db` inside the `mongodb` container and persists all database data across container restarts and rebuilds.
+
+#### Common commands
+
+To stop and remove containers:
+
+```bash
+docker compose down
+```
+
+To also remove the persisted MongoDB volume (wipes all data):
+
+```bash
+docker compose down -v
+```
+
+To rebuild only a specific service after a code change:
+
+```bash
+docker compose up --build frontend
+```
+
+> **Security note:** The `JWT_SECRET` in `docker-compose.yml` is set to the placeholder value `schlüssel`. Replace it with a strong, randomly generated secret before any public or production deployment.
+
+### Running Manually
 
 1. **Start MongoDB** (using Docker):
    ```bash
@@ -1207,3 +1295,184 @@ cd backend
 npm run build
 npm run start
 ```
+
+## Testing
+
+The project has two independent test suites — one for the frontend library code and one for the backend services. Together they cover 84 testsacross 10 test files.
+
+### Running the Tests
+
+**Frontend** (from `web-view/`):
+```bash
+npm run test:run   # single run (CI)
+npm test           # watch mode
+```
+
+**Backend** (from `backend/`):
+```bash
+npm test
+```
+
+> **Note:** The first backend test run downloads the MongoDB binary (~92 MB) used by `MongoMemoryServer`. Subsequent runs reuse the cached binary and complete in under 5 seconds.
+
+---
+
+### Frontend Tests (Vitest)
+
+**Framework:** [Vitest](https://vitest.dev/) v4  
+**Location:** `web-view/src/lib/*.test.ts`  
+**Total:** 7 files, 54 tests
+
+All frontend tests are pure unit/integration tests with no DOM or network dependencies. They exercise the library functions that implement the RML export pipeline and the file import parsers.
+
+#### `yarrrml.test.ts` (8 tests)
+
+Tests the `toYarrrml()` serializer (`src/lib/yarrrml.ts`) against a full OBOE plant-height example document.
+
+| Test | What it checks |
+|---|---|
+| Emits prefixes and all seven mappings | Every `TriplesMap` ID appears in the YAML output |
+| JSONPath logical source with iterator | `['source~jsonpath', '$[*]']` syntax |
+| `{Column}` → `$(Column)` template conversion | IRI-tagged objects get `~iri` suffix |
+| Literal label reference | No type suffix on plain literals |
+| Already-IRI column reference | `$(TraitID)~iri` |
+| Nested concat/toUpperCase function | `function: builtin:concat` + nested `grel:toUpperCase` |
+| Blank node subjects/objects | `value: …` + `type: blank` (no `~blanknode`) |
+| Golden snapshot | Stable output via `toMatchSnapshot()` |
+
+The snapshot is stored in `src/lib/__snapshots__/yarrrml.test.ts.snap`.
+
+#### `csvParse.test.ts` (23 tests)
+
+Tests all public functions in `src/lib/csvParse.ts`.
+
+| Function | Tests cover |
+|---|---|
+| `normalizeCsvNewlines` | CRLF and lone CR conversion |
+| `getCsvNonEmptyLines` | Blank/whitespace-only line filtering |
+| `parseCsvLine` | Delimiter splitting, quoted fields, tab delimiter, empty input, unclosed quotes |
+| `parseCsvTextToGrid` | Empty input, header/no-header, header-only, CRLF normalization, `maxRows` capping |
+| `csvGridToDataset` / `parseCsvTextToDataset` | Short-row padding, null on empty, deterministic IDs |
+
+#### `canvasToModel.test.ts` (10 tests)
+
+Tests `canvasToModel()` (`src/lib/canvasToModel.ts`) — Stage 1 of the export pipeline.
+
+| Test | What it checks |
+|---|---|
+| One TriplesMap per class node, no warnings | Correct map count from canvas nodes |
+| Logical source from dataset | CSV filename and reference formulation |
+| Subject IRI as `baseIri + $(ColumnName)` | Template construction for local-ID columns |
+| URI mapping not emitted as predicate-object | `rdf:type` is the subject marker, not a regular property |
+| Class→class link reuses target subject term | `subjectTermCache` reuse for inline linking |
+| Datatype literal | `[predicate, $(Column), xsd:double]` output |
+| Full-IRI column used as-is | No `baseIri/` prefix when sample values start with `https://` |
+| Blank node fallback (no uri property) | `value: ClassName_$(Col)` + `type: blank` |
+| Blank node includes parent uri-column | Compound key `ClassName_$(Col)_$(ParentCol)` for distinct rows |
+| Warning on unmapped class | `warnings` array contains the class name |
+
+#### `owlParse.test.ts` (8 tests)
+
+Tests `parseOwlToOntology()` (`src/lib/owlParse.ts`).
+
+| Test | What it checks |
+|---|---|
+| Empty / no rdf:RDF root | Returns empty ontology with correct name |
+| Extension stripping | `.OWL`, `.rdf` removed from ontology name |
+| `rdfs:label` reading | Label property populated |
+| Fragment fallback | Uses URI fragment as label when label is absent |
+| Full-URI fallback | Uses full URI when there is no fragment |
+| Multiple classes in document order | Order preserved |
+| Object, datatype, annotation properties | Correct type assigned; datatype range extracted; domain→class assignment |
+| Multiple domains | Property assigned to all matching classes |
+
+#### `yarrrmlToRml.test.ts` (2 tests)
+
+Integration tests for `yarrrmlToRml()` (`src/lib/yarrrmlToRml.ts`) — Stage 3 of the pipeline. Runs the real `@rmlio/yarrrml-parser` in the test environment.
+
+| Test | What it checks |
+|---|---|
+| Parses generated YARRRML into RML/Turtle | Presence of `rr:TriplesMap`, `rml:logicalSource`, `ql:CSV`, template, `rml:reference`, `xsd:double` |
+| Blank-node subject → `rr:termType rr:BlankNode` | Correct termType in the Turtle output |
+
+#### `rmlToModel.test.ts` (1 test)
+
+Round-trip test: `toYarrrml` → `yarrrmlToRml` → `rmlToModel` (`src/lib/rmlToModel.ts`). Verifies that an `RmlMappingDocument` survives a full serialization/parse cycle with subjects, classes, literal references, class→class links and typed datatypes all intact.
+
+#### `modelToCanvas.test.ts` (2 tests)
+
+End-to-end round-trip: `canvasToModel` → `toYarrrml` → `yarrrmlToRml` → `rmlToModel` → `modelToCanvas`. Two scenarios:
+
+| Test | What it checks |
+|---|---|
+| Full Canvas → RML → Canvas round-trip | Classes, columns, uri-mappings, value mappings, class→class relation, flow nodes/edges counts |
+| Merge onto loaded ontology + dataset (mode B) | Existing class/column IDs, labels and sample values are reused; loaded ontology/dataset is preserved in full |
+
+---
+
+### Backend Tests (Jest)
+
+**Framework:** [Jest](https://jestjs.io/) v30 with `ts-jest`  
+**Location:** `backend/tests/`  
+**Total:** 3 files, 30 tests
+
+#### Test Infrastructure (`tests/setup.ts`)
+
+Runs as `setupFilesAfterEnach` (configured in `jest.config.ts`). Uses `mongodb-memory-server` to spin up an in-process MongoDB instance for each test suite, avoiding any dependency on a running database.
+
+```
+beforeAll  — MongoMemoryServer.create() + mongoose.connect()   [60 s timeout]
+afterEach  — wipes all collections between tests
+afterAll   — mongoose.disconnect() + mongo.stop()
+```
+
+The 60-second `beforeAll` timeout accommodates the first-run binary download. Once cached, startup takes under 2 seconds.
+
+#### `jwtService.test.ts` (13 tests)
+
+Tests `verifyPasswordAndCreateJWT` and `verifyJWT` from `src/services/JWTServices.ts`. The `loginAuthService` dependency is fully mocked with `jest.mock`.
+
+**`verifyPasswordAndCreateJWT` describe (6 tests):**
+
+| Test | What it checks |
+|---|---|
+| Creates a valid JWT for correct credentials | Token is a string; payload has correct `sub`, `isAdmin`, non-expired `exp` |
+| Passes credentials through to `login` | Mock called exactly once with correct arguments |
+| Returns `undefined` when login fails | No token produced for bad credentials |
+| Throws when `JWT_SECRET` is not set | Error message: "verifyJWT or jwtTtl is not defined" |
+| Throws when `JWT_TTL` is not set | Same error |
+
+**`verifyJWT` describe (7 tests):**
+
+| Test | What it checks |
+|---|---|
+| Decodes a valid token (round-trip) | `id`, `exp`, and `isAdmin` are correctly recovered |
+| Throws `JsonWebTokenError` for an invalid token | Malformed string rejected |
+| Throws `JsonWebTokenError` for `undefined` | `undefined` input rejected |
+| Throws when signed with a different secret | Signature mismatch detected |
+| Throws for an expired token | Negative TTL causes immediate expiry |
+| Throws when `JWT_SECRET` is not set | Error message: "jwtSecret is not defined" |
+
+Each `describe` block has its own `beforeEach` that restores `JWT_SECRET` and `JWT_TTL` to `"test-secret"` / `"300"`, preventing environment mutations in one suite from affecting the other.
+
+#### `login.test.ts` (3 tests)
+
+Tests `login()` from `src/services/loginAuthService.ts` against a real in-memory MongoDB. A `Harry` user is created in `beforeEach` (and the collection is wiped in `afterEach`).
+
+| Test | What it checks |
+|---|---|
+| Correct credentials | Returns object containing `{ id, isAdmin }` |
+| Wrong name | Returns falsy |
+| Wrong password | Returns falsy |
+
+#### `user.test.ts` (14 tests)
+
+Tests all functions exported from `src/services/userServices.ts` against the in-memory database.
+
+| Describe | Tests |
+|---|---|
+| `createUser` | Creates with id; persists to DB; rejects missing required field; rejects duplicate email |
+| `getCurrentUser` | Returns user for valid id; throws "User could not be found" for missing id; throws on malformed id |
+| `getAllUsers` | Returns empty array; returns all users |
+| `updateUser` | Updates and returns new value; persists update; throws for missing user; leaves fields unchanged on empty update |
+| `deleteUser` | Removes from DB; deletes only the targeted user; throws for missing user |
