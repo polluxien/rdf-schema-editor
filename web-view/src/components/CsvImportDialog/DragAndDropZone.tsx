@@ -139,10 +139,7 @@ function DragAndDropZone({ showDragAndDropZone }: DragAndDropZoneProps) {
                 RDF
               </span>
               <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-                Turtel
-              </span>
-              <span className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-                JSON-LD
+                Turtle
               </span>
             </div>
           </div>
@@ -152,7 +149,7 @@ function DragAndDropZone({ showDragAndDropZone }: DragAndDropZoneProps) {
           id="dropzone-file"
           type="file"
           className="hidden"
-          accept=".csv,.owl,.rdf,.xml"
+          accept=".csv,.owl,.rdf,.xml,.ttl"
           onChange={handleInputChange}
           multiple={showDragAndDropZone}
         />
