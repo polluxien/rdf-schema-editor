@@ -87,6 +87,19 @@ Documentation can be found in `doc/DOCUMENTATION.md`.
 
 ## Getting Started
 
+
+### Docker Build (recommended)
+
+```bash
+docker-compose up --build
+```
+
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:4000`
+- MongoDB: `localhost:27017`
+
+---
+
 ### Local Development
 
 Requires Node.js >= 20 and a running MongoDB instance.
@@ -114,18 +127,6 @@ See [`backend/README.md`](backend/README.md) for backend environment variables.
 npm run test:frontend
 npm run test:backend
 ```
-
-### Docker
-
-```bash
-docker-compose up --build
-```
-
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:4000`
-- MongoDB: `localhost:27017`
-
----
 
 ## Deliverables (*Planned*)
 
