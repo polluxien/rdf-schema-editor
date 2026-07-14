@@ -1,0 +1,288 @@
+@prefix ns1: <http://ecoinformatics.org/oboe/oboe.1.2/oboe-core.owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://ecoinformatics.org/oboe/data/251> a ns1:ObservationCollection ;
+    rdfs:label "The Xylem/Phloem Database" ;
+    ns1:hasMember <http://ecoinformatics.org/oboe/data/1797347> .
+
+<http://ecoinformatics.org/oboe/data/428> a ns1:ObservationCollection ;
+    rdfs:label "Trait and biomass data 2014 and 2015 of the BE_LOW project" ;
+    ns1:hasMember <http://ecoinformatics.org/oboe/data/2950046>,
+        <http://ecoinformatics.org/oboe/data/2950084>,
+        <http://ecoinformatics.org/oboe/data/2950445>,
+        <http://ecoinformatics.org/oboe/data/2950515>,
+        <http://ecoinformatics.org/oboe/data/2950667>,
+        <http://ecoinformatics.org/oboe/data/2951659> .
+
+<http://ecoinformatics.org/oboe/data/526> a ns1:ObservationCollection ;
+    rdfs:label "KIT herbaceous functional gradient (weekly measurements)" ;
+    ns1:hasMember <http://ecoinformatics.org/oboe/data/6007753> .
+
+<http://ecoinformatics.org/oboe/data/589> a ns1:ObservationCollection ;
+    rdfs:label "Jena Experiment Traits" ;
+    ns1:hasMember <http://ecoinformatics.org/oboe/data/6086204>,
+        <http://ecoinformatics.org/oboe/data/6086704>,
+        <http://ecoinformatics.org/oboe/data/6087372>,
+        <http://ecoinformatics.org/oboe/data/6088380>,
+        <http://ecoinformatics.org/oboe/data/6089614>,
+        <http://ecoinformatics.org/oboe/data/6089933>,
+        <http://ecoinformatics.org/oboe/data/6091662>,
+        <http://ecoinformatics.org/oboe/data/6091719>,
+        <http://ecoinformatics.org/oboe/data/6091729>,
+        <http://ecoinformatics.org/oboe/data/6092702>,
+        <http://ecoinformatics.org/oboe/data/6092715> .
+
+<http://ecoinformatics.org/oboe/data/760> a ns1:ObservationCollection ;
+    rdfs:label "Vegetation states from intensively monitored crop sites in western Germany" ;
+    ns1:hasMember <http://ecoinformatics.org/oboe/data/6429026> .
+
+<http://ecoinformatics.org/oboe/data/13590960> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.8" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/1797347> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/13590960> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/4TT2S> .
+
+<http://ecoinformatics.org/oboe/data/27064979> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.06" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/27066179> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.1" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/27079591> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.17" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/27082114> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.13" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/27087409> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.02" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/27113203> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.106" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/2950046> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/27064979> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/97H4> .
+
+<http://ecoinformatics.org/oboe/data/2950084> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/27066179> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/C56N> .
+
+<http://ecoinformatics.org/oboe/data/2950445> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/27079591> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/97H4> .
+
+<http://ecoinformatics.org/oboe/data/2950515> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/27082114> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/97H4> .
+
+<http://ecoinformatics.org/oboe/data/2950667> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/27087409> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/3F6PX> .
+
+<http://ecoinformatics.org/oboe/data/2951659> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/27113203> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/6857G> .
+
+<http://ecoinformatics.org/oboe/data/3F6PX> a ns1:Entity ;
+    rdfs:label "Galium verum" .
+
+<http://ecoinformatics.org/oboe/data/3M7ZD> a ns1:Entity ;
+    rdfs:label "Holcus lanatus" .
+
+<http://ecoinformatics.org/oboe/data/3W7ZK> a ns1:Entity ;
+    rdfs:label "Lotus corniculatus" .
+
+<http://ecoinformatics.org/oboe/data/4TT2S> a ns1:Entity ;
+    rdfs:label "Ruta graveolens" .
+
+<http://ecoinformatics.org/oboe/data/58375768> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.3044895105" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/58Q42> a ns1:Entity ;
+    rdfs:label "Trifolium pratense" .
+
+<http://ecoinformatics.org/oboe/data/59411683> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.3" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/59420200> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.48" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/59431472> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.7" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/59448907> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.23" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/59471898> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.18" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/59477711> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.12" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/59505961> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.23" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/59506888> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.38" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/59507053> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.05" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/59522462> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.05" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/59522662> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.03" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/5BCMF> a ns1:Entity ;
+    rdfs:label "Vicia cracca" .
+
+<http://ecoinformatics.org/oboe/data/6007753> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/58375768> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/8W5WT> .
+
+<http://ecoinformatics.org/oboe/data/6086204> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/59411683> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/C56N> .
+
+<http://ecoinformatics.org/oboe/data/6086704> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/59420200> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/ND35> .
+
+<http://ecoinformatics.org/oboe/data/6087372> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/59431472> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/3M7ZD> .
+
+<http://ecoinformatics.org/oboe/data/6088380> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/59448907> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/3W7ZK> .
+
+<http://ecoinformatics.org/oboe/data/6089614> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/59471898> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/58Q42> .
+
+<http://ecoinformatics.org/oboe/data/6089933> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/59477711> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/5BCMF> .
+
+<http://ecoinformatics.org/oboe/data/6091662> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/59505961> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/B3VY2> .
+
+<http://ecoinformatics.org/oboe/data/6091719> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/59506888> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/723WW> .
+
+<http://ecoinformatics.org/oboe/data/6091729> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/59507053> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/723WW> .
+
+<http://ecoinformatics.org/oboe/data/6092702> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/59522462> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/4RHKY> .
+
+<http://ecoinformatics.org/oboe/data/6092715> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/59522662> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/4RHKY> .
+
+<http://ecoinformatics.org/oboe/data/63331583> a ns1:Measurement ;
+    ns1:hasValue [ a ns1:MeasuredValue ;
+            ns1:hasCode "0.28" ] ;
+    ns1:ofCharacteristic <http://top-thesaurus.org/trait#TOP69> ;
+    ns1:usesStandard <http://ecoinformatics.org/oboe/data/m> .
+
+<http://ecoinformatics.org/oboe/data/6429026> a ns1:Observation ;
+    ns1:hasMeasurement <http://ecoinformatics.org/oboe/data/63331583> ;
+    ns1:ofEntity <http://ecoinformatics.org/oboe/data/N82B> .
+
+<http://ecoinformatics.org/oboe/data/6857G> a ns1:Entity ;
+    rdfs:label "Arrhenatherum elatius" .
+
+<http://ecoinformatics.org/oboe/data/8W5WT> a ns1:Entity ;
+    rdfs:label "Alopecurus geniculatus" .
+
+<http://ecoinformatics.org/oboe/data/B3VY2> a ns1:Entity ;
+    rdfs:label "Leontodon hispidus" .
+
+<http://ecoinformatics.org/oboe/data/N82B> a ns1:Entity ;
+    rdfs:label "Brassica napus" .
+
+<http://ecoinformatics.org/oboe/data/ND35> a ns1:Entity ;
+    rdfs:label "Bromus hordeaceus" .
+
+<http://ecoinformatics.org/oboe/data/4RHKY> a ns1:Entity ;
+    rdfs:label "Ranunculus repens" .
+
+<http://ecoinformatics.org/oboe/data/723WW> a ns1:Entity ;
+    rdfs:label "Leucanthemum vulgare" .
+
+<http://ecoinformatics.org/oboe/data/C56N> a ns1:Entity ;
+    rdfs:label "Alopecurus pratensis" .
+
+<http://ecoinformatics.org/oboe/data/97H4> a ns1:Entity ;
+    rdfs:label "Achillea millefolium" .
+
+<http://ecoinformatics.org/oboe/data/m> a ns1:Unit .
+
+<http://top-thesaurus.org/trait#TOP69> a ns1:Characteristic ;
+    rdfs:label "Plant height vegetative" .
+

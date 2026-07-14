@@ -57,6 +57,7 @@ Icon?
 # pnpm-lock.yaml
 
 # Build-Artefakte
+.next
 .cache
 .parcel-cache
 .turbo

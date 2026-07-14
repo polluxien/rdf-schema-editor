@@ -131,3 +131,38 @@ describe("csvGridToDataset / parseCsvTextToDataset", () => {
     expect(ds?.columns[0].id).toBe("i-2");
   });
 });
+
+describe("parseCsvTextToGrid — maxRows", () => {
+  const text = "A,B\n1,2\n3,4\n5,6\n7,8";
+
+  it("keeps only the first N data rows when maxRows is set", () => {
+    const g = parseCsvTextToGrid(text, opts({ maxRows: 2 }));
+    expect(g?.headers).toEqual(["A", "B"]);
+    expect(g?.rows).toEqual([
+      ["1", "2"],
+      ["3", "4"],
+    ]);
+  });
+
+  it("imports all rows when maxRows is undefined", () => {
+    const g = parseCsvTextToGrid(text, opts());
+    expect(g?.rows).toHaveLength(4);
+  });
+
+  it("imports all rows when maxRows is non-positive", () => {
+    expect(parseCsvTextToGrid(text, opts({ maxRows: 0 }))?.rows).toHaveLength(4);
+  });
+
+  it("returns all rows when maxRows exceeds the row count", () => {
+    expect(parseCsvTextToGrid(text, opts({ maxRows: 99 }))?.rows).toHaveLength(4);
+  });
+
+  it("counts data rows (not the header) when hasHeader is false", () => {
+    const g = parseCsvTextToGrid(text, opts({ hasHeader: false, maxRows: 2 }));
+    // First line becomes a data row here → first 2 lines kept.
+    expect(g?.rows).toEqual([
+      ["A", "B"],
+      ["1", "2"],
+    ]);
+  });
+});

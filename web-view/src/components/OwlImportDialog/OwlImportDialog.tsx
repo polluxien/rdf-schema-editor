@@ -7,7 +7,7 @@ import {
 } from "../../api/owlApi";
 import { getStoredApiKey } from "../../hooks/useApiKey";
 
-const BIOPORTAL_API_URL = "https://data.biodivportal.gfbio.org";
+const BIODIVPORTAL_API_URL = "https://data.biodivportal.gfbio.org";
 
 type ImportMode = "file" | "api";
 
@@ -66,7 +66,7 @@ export default function OwlImportDialog({
 
     try {
       const config: OwlApiConfig = {
-        baseUrl: BIOPORTAL_API_URL,
+        baseUrl: BIODIVPORTAL_API_URL,
         apiKey: apiKey.trim(),
       };
       const result = await listAvailableOwlFiles(config);
@@ -92,7 +92,7 @@ export default function OwlImportDialog({
 
     try {
       const config: OwlApiConfig = {
-        baseUrl: BIOPORTAL_API_URL,
+        baseUrl: BIODIVPORTAL_API_URL,
         apiKey: apiKey.trim(),
       };
       const result = await downloadOwlFile(selectedOntology, config);
@@ -156,7 +156,7 @@ export default function OwlImportDialog({
             }`}
           >
             <Globe size={16} className="inline-block mr-2 -mt-0.5" />
-            From BioPortal
+            From BioDivPortal
           </button>
         </div>
 
@@ -196,7 +196,7 @@ export default function OwlImportDialog({
                     type="password"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="Enter your BioPortal API key"
+                    placeholder="Enter your BioDivPortal API key"
                     className="flex-1 bg-white border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-500 dark:bg-gray-900 dark:border-gray-600 dark:text-white dark:placeholder-gray-500"
                   />
                   <button
