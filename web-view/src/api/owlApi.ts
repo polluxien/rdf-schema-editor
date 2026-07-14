@@ -102,26 +102,32 @@ export async function downloadOwlFile(
 }
 
 /**
- * Validates that the downloaded content is a valid OWL/RDF file.
- * 
+ * Validates that the downloaded content looks like an OWL/RDF file, based on
+ * its declared content type and a few format-specific markers.
+ *
  * @param content - The downloaded content string
  * @param contentType - The MIME type of the content
- * @returns true if valid, throws an error otherwise
- * 
- * TODO: Implement validation logic (e.g., parse with rdflib, check format)
+ * @returns true if it looks valid, throws a descriptive error otherwise
  */
 export function validateOwlContent(
   content: string,
   contentType: string,
 ): boolean {
-  void content;
-  void contentType;
-  // TODO: Implement validation
-  // - Check for valid XML/Turtle/JSON-LD syntax
-  // - Verify it contains OWL constructs
-  // - Use your existing RDF parsing utilities if available
-  
-  throw new Error("Not implemented: validateOwlContent");
+  if (!content.trim()) {
+    throw new Error("Downloaded OWL content is empty.");
+  }
+
+  const looksLikeRdfXml = /<[^>]*(rdf|owl):/i.test(content);
+  const looksLikeTurtle = /@prefix\s+\S+:\s*<[^>]+>\s*\./i.test(content);
+  const looksLikeJsonLd = /"@context"\s*:|"@type"\s*:/.test(content);
+
+  if (!looksLikeRdfXml && !looksLikeTurtle && !looksLikeJsonLd) {
+    throw new Error(
+      `Downloaded content does not look like valid OWL/RDF (content-type: ${contentType}).`,
+    );
+  }
+
+  return true;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
