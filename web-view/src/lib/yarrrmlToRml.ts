@@ -39,6 +39,6 @@ export function yarrrmlToRml(
   return new Promise((resolve, reject) => {
     const writer = new Writer({ prefixes: { ...RML_PREFIXES, ...extraPrefixes } });
     writer.addQuads(quads);
-    writer.end((error, result) => (error ? reject(error) : resolve(result)));
+    writer.end((error: Error | null, result: string) => (error ? reject(error) : resolve(result)));
   });
 }
