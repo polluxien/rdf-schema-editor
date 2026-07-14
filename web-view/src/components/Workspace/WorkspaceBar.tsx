@@ -48,7 +48,7 @@ export default function WorkspaceBar() {
           type="button"
           onClick={handleAdd}
           className="flex items-center px-2.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 transition-colors dark:text-gray-600 dark:hover:text-gray-300 dark:hover:bg-gray-900"
-          title="Neuer Workspace"
+          title="New workspace"
         >
           <Plus size={14} strokeWidth={1.5} />
         </button>

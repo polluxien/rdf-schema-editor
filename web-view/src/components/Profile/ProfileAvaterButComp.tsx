@@ -52,7 +52,7 @@ function ProfileAvatarButton() {
       <button
         type="button"
         title={
-          loginInfo ? `Eingeloggt als ${user?.name ?? "..."}` : "Einloggen"
+          loginInfo ? `Logged in as ${user?.name ?? "..."}` : "Log in"
         }
         onClick={deligateClick}
         className="w-8 h-8 rounded-full cursor-pointer bg-gray-300 hover:bg-gray-400 flex items-center justify-center transition-colors dark:bg-gray-400 dark:hover:bg-gray-600"

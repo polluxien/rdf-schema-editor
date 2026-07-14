@@ -64,7 +64,7 @@ export default function WorkspaceTab({
               setIsEditing(false);
             }
           }}
-          aria-label="Workspace-Name"
+          aria-label="Workspace name"
           className="w-full bg-white px-3 py-1.5 text-xs outline-none border-b border-gray-400 dark:bg-gray-950"
           onClick={(e) => e.stopPropagation()}
         />
@@ -79,7 +79,7 @@ export default function WorkspaceTab({
           className={`flex-1 truncate py-1.5 text-xs text-left ${
             canDelete ? "pl-3 pr-5" : "px-3"
           } ${isActive ? "border-b border-gray-900 -mb-px dark:border-gray-100" : ""}`}
-          title="Doppelklick zum Umbenennen"
+          title="Double-click to rename"
         >
           {workspace.name}
         </button>
@@ -93,7 +93,7 @@ export default function WorkspaceTab({
             onDelete();
           }}
           className="absolute right-0 top-0 bottom-0 px-1 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-500 transition-opacity dark:text-gray-600 dark:hover:text-red-400"
-          title="Workspace schließen"
+          title="Close workspace"
         >
           <X size={12} />
         </button>

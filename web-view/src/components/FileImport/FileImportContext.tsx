@@ -93,7 +93,7 @@ export function FileImportProvider({ children }: { children: ReactNode }) {
   const notifyRemovedMappings = useCallback((count: number) => {
     if (count === 0) return;
     setRemovalNotice(
-      `${count} Verknüpfung${count === 1 ? "" : "en"} entfernt: die zugehörigen Klassen/Spalten sind im neuen Import nicht mehr vorhanden.`,
+      `${count} link${count === 1 ? "" : "s"} removed: the associated classes/columns no longer exist in the new import.`,
     );
   }, []);
 
@@ -378,7 +378,7 @@ export function FileImportProvider({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => setRemovalNotice(null)}
-            aria-label="Meldung schließen"
+            aria-label="Dismiss message"
             className="shrink-0 text-amber-500 hover:text-amber-800 transition-colors dark:text-amber-400 dark:hover:text-amber-200"
           >
             ×

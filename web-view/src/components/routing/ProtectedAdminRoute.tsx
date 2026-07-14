@@ -8,7 +8,7 @@ export default function ProtectedAdminRoute() {
   if (loginInfo === undefined) {
     return (
       <div className="flex h-screen items-center justify-center bg-white dark:bg-gray-950">
-        <LoadingComponent label="Berechtigungen werden geprüft..." />
+        <LoadingComponent label="Checking permissions..." />
       </div>
     );
   }

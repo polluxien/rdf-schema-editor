@@ -17,7 +17,7 @@ export default function WorkspaceSaveErrorToast() {
       />
       <div className="min-w-0">
         <p className="text-sm font-medium text-red-800 dark:text-red-300">
-          Workspace konnte nicht gespeichert werden
+          Workspace could not be saved
         </p>
         <p className="mt-0.5 text-xs text-red-700 break-words dark:text-red-400">
           {saveError}
@@ -26,7 +26,7 @@ export default function WorkspaceSaveErrorToast() {
       <button
         type="button"
         onClick={clearSaveError}
-        aria-label="Meldung schließen"
+        aria-label="Dismiss message"
         className="shrink-0 text-red-400 hover:text-red-700 transition-colors dark:text-red-500 dark:hover:text-red-300"
       >
         <X size={14} />

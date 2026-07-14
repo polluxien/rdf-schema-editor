@@ -15,12 +15,12 @@ function ErrorFallback({ error }: ErrorFallbackProps) {
     <div className="flex justify-center p-8">
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 max-w-lg w-full">
         <p className="font-medium text-gray-900 dark:text-gray-100 mb-1">
-          Etwas ist schiefgelaufen
+          Something went wrong
         </p>
 
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-3">
           <p className="text-[11px] uppercase tracking-wider text-gray-400 mb-1">
-            Fehlertyp
+            Error type
           </p>
           <p className="text-sm font-mono text-gray-900 dark:text-gray-100">
             {appError.name}
@@ -29,7 +29,7 @@ function ErrorFallback({ error }: ErrorFallbackProps) {
 
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4">
           <p className="text-[11px] uppercase tracking-wider text-gray-400 mb-1">
-            Meldung
+            Message
           </p>
           <p className="text-sm font-mono text-gray-900 dark:text-gray-100">
             {appError.message}
@@ -48,7 +48,7 @@ function ErrorFallback({ error }: ErrorFallbackProps) {
               ) : (
                 <ChevronRight size={13} />
               )}
-              Stack trace {showStack ? "verbergen" : "anzeigen"}
+              Stack trace {showStack ? "hide" : "show"}
             </button>
             {showStack && (
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4">

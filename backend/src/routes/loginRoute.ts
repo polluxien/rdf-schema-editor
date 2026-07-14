@@ -91,7 +91,7 @@ loginRouter.delete("/", async (req, res, next) => {
       secure: useSecureCookie,
       sameSite: cookieSameSite,
     });
-    return res.status(200).json({ message: "Cookie erfolgreich gelöscht!" });
+    return res.status(200).json({ message: "Cookie successfully deleted!" });
   } catch (err) {
     next(err);
   }

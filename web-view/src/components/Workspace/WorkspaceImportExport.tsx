@@ -151,8 +151,8 @@ export default function WorkspaceImportExport() {
             disabled={isSaving || !activeWorkspaceId}
             title={
               activeWorkspace?.savedAt
-                ? `Zuletzt gespeichert: ${new Date(activeWorkspace.savedAt).toLocaleString("de-DE")}`
-                : "Aktuellen Workspace im Account speichern"
+                ? `Last saved: ${new Date(activeWorkspace.savedAt).toLocaleString()}`
+                : "Save the current workspace to your account"
             }
             className={`flex items-center gap-1 ${actionClass}`}
           >
@@ -171,8 +171,8 @@ export default function WorkspaceImportExport() {
             disabled={!canDelete}
             title={
               canDelete
-                ? "Workspace löschen"
-                : "Der letzte Workspace kann nicht gelöscht werden"
+                ? "Delete workspace"
+                : "The last workspace cannot be deleted"
             }
             className={`flex items-center gap-1 ${actionClass} hover:text-red-600 dark:hover:text-red-400`}
           >
@@ -188,7 +188,7 @@ export default function WorkspaceImportExport() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-900">
             <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              Workspace "{activeWorkspace?.name}" löschen?
+              Delete workspace "{activeWorkspace?.name}"?
             </h2>
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
               Are you sure to delete this workspace? This action cannot be undone.
@@ -207,7 +207,7 @@ export default function WorkspaceImportExport() {
                 }}
                 className="rounded px-3 py-1.5 text-sm text-gray-600 transition-colors hover:text-gray-950 dark:text-gray-300 dark:hover:text-white"
               >
-                Abbrechen
+                Cancel
               </button>
               <button
                 type="button"
@@ -227,7 +227,7 @@ export default function WorkspaceImportExport() {
         ref={csvInputRef}
         type="file"
         accept=".csv"
-        aria-label="CSV importieren"
+        aria-label="Import CSV"
         onChange={handleFileSelect}
         className="hidden"
       />
@@ -235,7 +235,7 @@ export default function WorkspaceImportExport() {
         ref={owlInputRef}
         type="file"
         accept=".owl,.rdf,.xml"
-        aria-label="OWL importieren"
+        aria-label="Import OWL"
         onChange={handleFileSelect}
         className="hidden"
       />
@@ -243,7 +243,7 @@ export default function WorkspaceImportExport() {
         ref={rmlInputRef}
         type="file"
         accept=".ttl,.rml,.rml.ttl"
-        aria-label="RML importieren"
+        aria-label="Import RML"
         onChange={handleRmlSelect}
         className="hidden"
       />
