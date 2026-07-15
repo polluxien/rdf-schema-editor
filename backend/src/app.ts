@@ -3,6 +3,7 @@ import express, { type Request, type Response, type NextFunction } from "express
 import { loginRouter } from "./routes/loginRoute";
 import { userRouter } from "./routes/userRoute";
 import { workspaceRouter } from "./routes/workspaceRoute";
+import { rdfExportRouter } from "./routes/rdfExportRoute";
 
 import cookieParser from "cookie-parser";
 import { configureCORS } from "./configCORS";
@@ -43,6 +44,7 @@ app.get("/api/healthy", (_req, res) => {
 app.use("/api/login", loginRouter);
 app.use("/api/users", userRouter);  
 app.use("/api/workspaces", workspaceRouter);
+app.use("/api/export", rdfExportRouter);
 
 // Global error handler
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
