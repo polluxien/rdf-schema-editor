@@ -32,6 +32,7 @@ const SERVICE_URL = `http://localhost:${SERVICE_PORT}`;
  * Returns the new HEAD SHA so the caller can detect whether anything changed.
  */
 export async function pullLatest(): Promise<{ changed: boolean; sha: string }> {
+  await execAsync(`git config --global --add safe.directory "${BIODIV_DIR}"`);
   const { stdout: before } = await execAsync(`git -C "${BIODIV_DIR}" rev-parse HEAD`);
   const shaBefore = before.trim();
 
