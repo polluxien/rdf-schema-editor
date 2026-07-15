@@ -1,4 +1,5 @@
 FROM node:lts-alpine
+RUN apk add --no-cache git docker-cli
 WORKDIR /app/backend
 
 COPY backend/package*.json ./
