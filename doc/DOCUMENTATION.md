@@ -17,6 +17,7 @@ This documentation is meant to be a living document that will be updated as the 
 - User registration/login and session management with JWT authentication, login works with either username or email
 - Admin user-management area (list/edit/delete users)
 - Workspace persistence to a MongoDB database, scoped per user, with local-only fallback when logged out
+- Export the loaded dataset + current RML mapping as materialized RDF (Turtle / N-Triples / JSON-LD) via the WP8 `rdf-transform` microservice
 
 Note: functionality of this application, especially the export of models and rdf, goes hand-in-hand with WP8 and might therefore not be thoroughly documented here.
 
@@ -30,8 +31,11 @@ The project is a monorepo split into an independent frontend and backend:
 ├── web-view/        # React + Vite frontend
 ├── backend/         # Express + MongoDB backend
 ├── sharedTypes/      # TypeScript types shared by both sides
+├── BiodivPipeline/  # Nested git repo (git sparse-checkout: only modules/local/rdf_transform/)
 └── doc/              # This documentation
 ```
+
+`BiodivPipeline/` is a separate git repository (`git@github.com:biodivportal/BiodivPipeline.git`, branch `wp8-rdf-transform`) checked out inside the project root. Git sparse-checkout is configured so only `modules/local/rdf_transform/` is present on disk. It is **not** tracked as a submodule — it is listed in the main repo's untracked files and must be excluded from `git add` manually. The `docker-compose.override.yml` mounts it read-only into the backend container.
 
 ### Application Entry Point
 
@@ -277,6 +281,7 @@ A toolbar below the workspace tabs with import, export, and base IRI controls:
 - **Import CSV:** Triggers a hidden `<input type="file" accept=".csv">`. The selected file is passed to `importFiles()`.
 - **Import OWL:** Opens the `OwlImportDialog` (which itself supports file or API import).
 - **Export (yarr)rml:** Opens the `RmlExportDialog`. The label "*(yarr)rml*" was chosen because the import handles both yarrrml and rml. If the label seems unreasonable or confusing, it can be fixed in the support weeks.
+- **Export rdf:** Opens the `RdfExportDialog`. Triggers the full WP8 pipeline: git pull → Docker build/start → POST `/transform` → browser download.
 - **Base IRI:** A text input bound to `baseIri` from `AppContext`. Defaults to `http://example.org`. This value is used by the export pipeline to construct subject IRI templates.
 
 #### OntologyCanvas (`web-view/src/components/OntologyCanvas/OntologyCanvas.tsx`)
@@ -493,6 +498,26 @@ A modal dialog for importing OWL ontologies from two sources.
 **API key:** Pre-filled from `getStoredApiKey()` (localStorage). *This might be subject to change once a more sophsticated persistence layer is implemented. As of right now, we believe that this is the most reasonable way to handle this.* The key is not persisted from this dialog — that's done in Settings → API Key.
 
 **States:** Loading list, downloading, error messages (displayed in a red banner).
+
+#### RdfExportDialog (`web-view/src/components/RdfExportDialog/RdfExportDialog.tsx`)
+
+A modal dialog for exporting the current canvas state as materialized **RDF** (not just the mapping) using the WP8 `rdf-transform` FastAPI microservice.
+
+**Controls:**
+- **Output format** selector: `turtle` (`.ttl`), `ntriples` (`.nt`), `jsonld` (`.jsonld`)
+
+**Export flow:**
+1. Lazily imports `buildMappingExport` to produce the RML/Turtle string from the canvas state.
+2. Serializes the loaded `Dataset` back to CSV (header row + data rows, with RFC-4180 quoting).
+3. `POST /api/export/rdf` with `{ rml, csv, outputFormat }` as JSON.
+4. The backend handles git pull, Docker container lifecycle, and the `/transform` call; streams the RDF bytes back.
+5. Browser downloads the result as `output.ttl` / `output.nt` / `output.jsonld`.
+
+**States:** idle → loading (shows current phase text) → done (download triggered) / error (inline error message).
+
+**Prerequisite:** A CSV dataset must be loaded; the button is disabled and a warning banner is shown otherwise. The first export can take ~30 seconds (Docker image build); subsequent exports reuse the running container.
+
+---
 
 #### RmlExportDialog (`web-view/src/components/RmlExportDialog/RmlExportDialog.tsx`)
 
@@ -761,13 +786,15 @@ backend/
     │   ├── loginRoute.ts       # POST/GET/DELETE /api/login
     │   ├── userRoute.ts        # /api/users CRUD
     │   ├── workspaceRoute.ts   # /api/workspaces CRUD
+    │   ├── rdfExportRoute.ts   # POST /api/export/rdf (WP8 integration)
     │   └── authentification.ts # requiresAuthentication / optionalAuthentication middleware
     ├── services/
-    │   ├── loginAuthService.ts # credential lookup (name or email) + password check
-    │   ├── JWTServices.ts       # sign/verify the access_token JWT
-    │   ├── userServices.ts      # user CRUD business logic
-    │   ├── workspaceServices.ts # workspace CRUD business logic
-    │   └── mongodb.ts           # Database connection singleton
+    │   ├── loginAuthService.ts    # credential lookup (name or email) + password check
+    │   ├── JWTServices.ts         # sign/verify the access_token JWT
+    │   ├── userServices.ts        # user CRUD business logic
+    │   ├── workspaceServices.ts   # workspace CRUD business logic
+    │   ├── rdfTransformService.ts # WP8 git pull + Docker lifecycle + /transform proxy
+    │   └── mongodb.ts             # Database connection singleton
     └── models/
         ├── User.ts              # User Mongoose schema
         ├── Workspace.ts          # Workspace Mongoose schema (ontology/mappings/flow layout)
@@ -835,6 +862,9 @@ Authentication uses **JWT tokens** (`jsonwebtoken`, HS256) stored in an `access_
 - `PUT /:id`: Update workspace with `{ name?, description?, data? }`.
 - `DELETE /:id`: Delete workspace.
 
+**RDF Export** (`/api/export`, no authentication required — stateless transform):
+- `POST /rdf`: Accepts `{ rml: string, csv: string, outputFormat?: "turtle"|"ntriples"|"jsonld", delimiter?: string, sourceType?: string }`. Pulls latest `rdf-transform` source, ensures the Docker container is running, proxies the payload to `POST /transform`, and streams the RDF bytes back with `Content-Disposition: attachment`.
+
 #### Frontend API Integration
 
 The frontend API client lives in `web-view/src/api/` and provides, among others:
@@ -858,6 +888,10 @@ JWT_TTL=300
 CORS_ORIGIN=http://localhost:5173
 # COOKIE_SECURE=true
 # PREFILL_USERS=true
+
+# WP8 rdf-transform integration (optional — defaults shown)
+# BIODIVPIPELINE_DIR=/absolute/path/to/BiodivPipeline  # default: resolved relative to __dirname
+# RDF_TRANSFORM_URL=http://localhost:8000              # default; set to http://host.docker.internal:8000 in docker-compose
 ```
 
 **Frontend** (`web-view/.env`):
@@ -1209,6 +1243,122 @@ _:MeasuredValue_1.5_obs002 a oboe:MeasuredValue ; oboe:hasCode "1.5" .
 | `test/mapping.rml.ttl` | Example output generated by this system |
 | `test/plant_height_vegetative_raw-model_oboe.ttl` | Reference Karma R2RML model for the same dataset |
 
+## RDF Export — WP8 Integration
+
+This section describes how the schema editor integrates with the WP8 `rdf-transform` FastAPI microservice to materialize RDF from the user's mapping and dataset.
+
+### Architecture
+
+```
+UI "rdf" button (RdfExportDialog)
+  ↓  builds RML + serializes CSV
+  POST /api/export/rdf  (Express backend)
+    ↓  git pull (sparse: only modules/local/rdf_transform)
+    ↓  docker build -t rdf-transform  (if code changed or container not running)
+    ↓  docker run -d -p 8000:8000 --name rdf-transform  (lazy-start, kept alive)
+    ↓  POST http://[host]:8000/transform  (multipart: dataset + mapping_schema)
+  ← RDF bytes streamed back → browser download
+```
+
+### BiodivPipeline — sparse checkout
+
+The `BiodivPipeline/` directory is a nested git repository configured with **git sparse-checkout** so only `modules/local/rdf_transform/` is checked out on disk:
+
+```bash
+git -C BiodivPipeline sparse-checkout init --cone
+git -C BiodivPipeline sparse-checkout set modules/local/rdf_transform
+```
+
+This means `git pull` inside `BiodivPipeline/` only downloads and updates the `rdf_transform` folder. All other pipeline modules remain absent from the working tree (they still exist in the git object store).
+
+The checked-out folder contains a self-contained FastAPI application:
+```
+modules/local/rdf_transform/
+├── Dockerfile        # python:3.11-slim + uvicorn + Morph-KGC
+├── main.py           # FastAPI app entry point
+├── requirements.txt
+├── src/
+│   ├── api/routes.py
+│   └── core/         # Morph-KGC RML materialization
+├── ontologies/       # Reference ontologies for /validate L3
+└── examples/         # Sample CSV + RML mapping
+```
+
+### Backend service: `rdfTransformService.ts`
+
+**File:** `backend/src/services/rdfTransformService.ts`
+
+Three exported functions, called in sequence by the route handler:
+
+#### `pullLatest()`
+
+1. Marks `BIODIV_DIR` as a `git safe.directory` (required when the directory is a bind-mounted volume owned by a different UID).
+2. Records the current HEAD SHA.
+3. Runs `git pull origin wp8-rdf-transform --ff-only`. Failure is non-fatal — logs a warning and continues with whatever is on disk.
+4. Returns `{ changed: boolean, sha: string }` — `changed` is true if the SHA advanced.
+
+#### `ensureContainerRunning(changed)`
+
+- If the container is already running **and** `changed` is false → reuses it (fast path).
+- Otherwise: stops the old container (`docker rm -f`), rebuilds the image (`docker build -t rdf-transform`), starts a new container (`docker run -d --rm -p 8000:8000 --name rdf-transform`), then polls `GET /` until the health check passes (60 s timeout, 1.5 s interval).
+
+#### `transform(rml, csv, opts)`
+
+Builds a `multipart/form-data` request with:
+- `mapping_schema` — the RML/Turtle string as `mapping.rml.ttl`
+- `dataset` — the CSV string as `dataset.csv`
+- `output_format`, `delimiter`, `source_type`
+
+POSTs to `SERVICE_URL/transform` (120 s timeout). Returns `{ body: Buffer, contentType: string }`.
+
+**Path resolution:**
+
+| Environment | `BIODIV_DIR` | `SERVICE_URL` |
+|---|---|---|
+| Dev (host) | `__dirname/../../../../BiodivPipeline` | `http://localhost:8000` |
+| docker-compose | `BIODIVPIPELINE_DIR` env var (`/app/BiodivPipeline`) | `RDF_TRANSFORM_URL` env var (`http://host.docker.internal:8000`) |
+
+The `host.docker.internal` hostname is resolved via the `extra_hosts: host-gateway` entry in `docker-compose.override.yml` (required on Linux; automatic on macOS/Windows).
+
+### Backend route: `rdfExportRoute.ts`
+
+**File:** `backend/src/routes/rdfExportRoute.ts`  
+**Mounted at:** `POST /api/export/rdf`  
+**Auth:** none required
+
+Request body (JSON):
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `rml` | `string` | required | RML/Turtle mapping |
+| `csv` | `string` | required | CSV dataset |
+| `outputFormat` | `"turtle"\|"ntriples"\|"jsonld"` | `"turtle"` | RDF serialization |
+| `delimiter` | `"COMMA"\|"TAB"\|"SEMICOLON"\|"PIPE"` | `"COMMA"` | CSV delimiter |
+| `sourceType` | `"CSV"\|"TSV"\|"JSON"` | `"CSV"` | Source type |
+
+The response body is the raw RDF bytes with `Content-Type` set appropriately and `Content-Disposition: attachment; filename="output.<ext>"`.
+
+### docker-compose.override.yml
+
+Docker Compose automatically merges `docker-compose.override.yml` alongside `docker-compose.yml`. The override adds three things to the `backend` service:
+
+```yaml
+services:
+  backend:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # resolves on Linux
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  # Docker-in-Docker via socket
+      - ./BiodivPipeline:/app/BiodivPipeline:ro    # rdf_transform source + Dockerfile
+    environment:
+      BIODIVPIPELINE_DIR: /app/BiodivPipeline
+      RDF_TRANSFORM_URL: http://host.docker.internal:8000
+```
+
+The Docker socket mount allows the backend container to manage sibling containers on the host daemon. The `BiodivPipeline` bind-mount is read-only; the backend only needs to read files for `docker build` and run `git pull` (git writes are to the git object store inside the directory, so `:ro` may need to be dropped if git operations fail with permission errors).
+
+---
+
 ## Example test
 
 We run our and Karmas export pipeline on the same dataset and compare the results. The example was the oboe example that Ms. Karam provided. We rebuild the semantic model provided by Miss Karam in our App and kept everything the same. The only difference are in `TaxonURI` and `UnitURI`: in the example a "PyTransform" was applied to create the URI. As we were explicitly told that that transformation is not needed, we omitted it and used `TaxonID` and `UnitName` respectively.
@@ -1232,11 +1382,14 @@ The entire stack (frontend, backend, MongoDB) can be started with a single comma
 docker compose up --build
 ```
 
-| Service  | URL                       | Docker image   |
-|----------|---------------------------|----------------|
-| Frontend | http://localhost:3000     | `rse-frontend` |
-| Backend  | http://localhost:4000     | `rse-backend`  |
-| MongoDB  | mongodb://localhost:27017  | `mongo:7.0`    |
+> **RDF export in docker-compose:** `docker-compose.override.yml` is automatically merged by Compose. It adds the Docker socket mount, the `BiodivPipeline/` volume, and the two env vars (`BIODIVPIPELINE_DIR`, `RDF_TRANSFORM_URL`) to the backend service. No extra flags are needed — `docker compose up --build` picks it up automatically.
+
+| Service       | URL                       | Docker image     |
+|---------------|---------------------------|------------------|
+| Frontend      | http://localhost:3000     | `rse-frontend`   |
+| Backend       | http://localhost:4000     | `rse-backend`    |
+| MongoDB       | mongodb://localhost:27017  | `mongo:7.0`      |
+| rdf-transform | http://localhost:8000     | `rdf-transform` (started on demand by the backend) |
 
 #### Service overview
 
