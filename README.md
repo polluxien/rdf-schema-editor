@@ -4,7 +4,7 @@
 
 ![Status](https://img.shields.io/badge/Status-In%20Progress-blue)
 ![University](https://img.shields.io/badge/University-Freie%20Universit%C3%A4t%20Berlin-green)
-![Requirement](https://img.shields.io/badge/Requirement-8%20Expert%20Schema%20Editor-purple)
+![Requirement](https://img.shields.io/badge/Requirement-7%20Expert%20Schema%20Editor-purple)
 
 </div>
 
