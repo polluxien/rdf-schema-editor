@@ -23,7 +23,12 @@ const RDF_TRANSFORM_DIR = path.join(
 const DOCKER_IMAGE = "rdf-transform";
 const DOCKER_CONTAINER = "rdf-transform";
 const SERVICE_PORT = 8000;
-const SERVICE_URL = `http://localhost:${SERVICE_PORT}`;
+// In dev the backend runs on the host so localhost works.
+// In docker-compose the rdf-transform port is published on the HOST, not inside
+// the backend container, so set RDF_TRANSFORM_URL=http://host.docker.internal:8000
+// (see docker-compose.override.yml).
+const SERVICE_URL =
+  process.env.RDF_TRANSFORM_URL ?? `http://localhost:${SERVICE_PORT}`;
 
 // ─── Git ─────────────────────────────────────────────────────────────────────
 
