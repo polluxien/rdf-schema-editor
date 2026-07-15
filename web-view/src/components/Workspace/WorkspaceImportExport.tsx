@@ -6,6 +6,7 @@ import { useWorkspace } from "../../hooks/useWorkspace";
 import { useLoginContext } from "../../api/LoginInfo";
 import OwlImportDialog from "../OwlImportDialog";
 import RmlExportDialog from "../RmlExportDialog";
+import RdfExportDialog from "../RdfExportDialog/RdfExportDialog";
 import WorkspaceSaveErrorToast from "./WorkspaceSaveErrorToast";
 
 export default function WorkspaceImportExport() {
@@ -29,6 +30,7 @@ export default function WorkspaceImportExport() {
   const rmlInputRef = useRef<HTMLInputElement>(null);
   const [owlDialogOpen, setOwlDialogOpen] = useState(false);
   const [rmlDialogOpen, setRmlDialogOpen] = useState(false);
+  const [rdfDialogOpen, setRdfDialogOpen] = useState(false);
   const [importingRml, setImportingRml] = useState(false);
   const [justSavedId, setJustSavedId] = useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -127,6 +129,13 @@ export default function WorkspaceImportExport() {
         className={actionClass}
       >
         (yarr)rml
+      </button>
+      <button
+        type="button"
+        onClick={() => setRdfDialogOpen(true)}
+        className={actionClass}
+      >
+        rdf
       </button>
 
       <span className="text-gray-300 dark:text-gray-700">|</span>
@@ -257,6 +266,10 @@ export default function WorkspaceImportExport() {
       <RmlExportDialog
         isOpen={rmlDialogOpen}
         onClose={() => setRmlDialogOpen(false)}
+      />
+      <RdfExportDialog
+        isOpen={rdfDialogOpen}
+        onClose={() => setRdfDialogOpen(false)}
       />
     </div>
   );
