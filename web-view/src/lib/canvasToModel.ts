@@ -132,13 +132,14 @@ function resolveSubjectTerm(
   parentUriColumns: DatasetColumn[],
   baseIri: string,
 ): { value: ValueExpression; termType: TermType } {
+  const slug = localName(classUri);
   if (uriColumn) {
     if (columnHoldsIri(uriColumn)) {
       return { value: { kind: "reference", column: uriColumn.name }, termType: "iri" };
     }
     const base = baseIri.replace(/\/+$/, "");
     return {
-      value: { kind: "template", template: `${base}/{${uriColumn.name}}` },
+      value: { kind: "template", template: `${base}/${slug}/{${uriColumn.name}}` },
       termType: "iri",
     };
   }
@@ -147,7 +148,6 @@ function resolveSubjectTerm(
   // Including the parent uri-column ensures the template evaluates to a unique
   // value per source row: two rows that share the same StdValue but differ in
   // ObsDataID (the parent's unique identifier) still get distinct blank nodes.
-  const slug = localName(classUri);
   const keyCols = [fallbackColumn, ...parentUriColumns].filter(
     (c): c is DatasetColumn => c !== undefined,
   );

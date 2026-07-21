@@ -1077,10 +1077,10 @@ When a class A links to class B via an object property, `canvasToModel` looks up
 # Observation → hasMeasurement → Measurement
 Observation:
   po:
-    - [ex:hasMeasurement, http://example.org/$(ObsDataID)~iri]
+    - [ex:hasMeasurement, http://example.org/Measurement/$(ObsDataID)~iri]
 
 Measurement:
-  s: http://example.org/$(ObsDataID)
+  s: http://example.org/Measurement/$(ObsDataID)
 ```
 
 The object value in A is literally the same expression as the subject value in B. Because both sides are evaluated from the same source row, the generated IRI is identical, and the link is correct.
